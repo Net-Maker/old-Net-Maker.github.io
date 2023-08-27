@@ -1,0 +1,608 @@
+<!doctype html><html lang=en dir=auto><head><meta charset=utf-8><meta http-equiv=x-ua-compatible content="IE=edge"><meta name=viewport content="width=device-width,initial-scale=1,shrink-to-fit=no"><meta name=robots content="index, follow"><title>NeRF Code | CookMaker's Website</title><meta name=keywords content="NeRF"><meta name=description content="Desc Text."><meta name=author content="NetMaker"><link rel=canonical href=https://canonical.url/to/page><meta name=google-site-verification content="XYZabc"><meta name=yandex-verification content="XYZabc"><meta name=msvalidate.01 content="XYZabc"><link crossorigin=anonymous href=/netmaker.github.io/assets/css/stylesheet.5cfc680b1eeaeef9efbced92d46c2a9e876b72ee14fba85846afc4cff9e6e6f8.css integrity="sha256-XPxoCx7q7vnvvO2S1Gwqnodrcu4U+6hYRq/Ez/nm5vg=" rel="preload stylesheet" as=style><script defer crossorigin=anonymous src=/netmaker.github.io/assets/js/highlight.f413e19d0714851f6474e7ee9632408e58ac146fbdbe62747134bea2fa3415e0.js integrity="sha256-9BPhnQcUhR9kdOfuljJAjlisFG+9vmJ0cTS+ovo0FeA=" onload=hljs.initHighlightingOnLoad()></script>
+<link rel=icon href=https://net-maker.github.io/netmaker.github.io/%3Clink%20/%20abs%20url%3E><link rel=icon type=image/png sizes=16x16 href=https://net-maker.github.io/netmaker.github.io/%3Clink%20/%20abs%20url%3E><link rel=icon type=image/png sizes=32x32 href=https://net-maker.github.io/netmaker.github.io/%3Clink%20/%20abs%20url%3E><link rel=apple-touch-icon href=https://net-maker.github.io/netmaker.github.io/%3Clink%20/%20abs%20url%3E><link rel=mask-icon href=https://net-maker.github.io/netmaker.github.io/%3Clink%20/%20abs%20url%3E><meta name=theme-color content="#2e2e33"><meta name=msapplication-TileColor content="#2e2e33"><noscript><style>#theme-toggle,.top-link{display:none}</style><style>@media(prefers-color-scheme:dark){:root{--theme:rgb(29, 30, 32);--entry:rgb(46, 46, 51);--primary:rgb(218, 218, 219);--secondary:rgb(155, 156, 157);--tertiary:rgb(65, 66, 68);--content:rgb(196, 196, 197);--hljs-bg:rgb(46, 46, 51);--code-bg:rgb(55, 56, 62);--border:rgb(51, 51, 51)}.list{background:var(--theme)}.list:not(.dark)::-webkit-scrollbar-track{background:0 0}.list:not(.dark)::-webkit-scrollbar-thumb{border-color:var(--theme)}}</style></noscript><script type=application/javascript>var doNotTrack=!1;doNotTrack||(function(e,t,n,s,o,i,a){e.GoogleAnalyticsObject=o,e[o]=e[o]||function(){(e[o].q=e[o].q||[]).push(arguments)},e[o].l=1*new Date,i=t.createElement(n),a=t.getElementsByTagName(n)[0],i.async=1,i.src=s,a.parentNode.insertBefore(i,a)}(window,document,"script","https://www.google-analytics.com/analytics.js","ga"),ga("create","UA-123-45","auto"),ga("send","pageview"))</script><meta property="og:title" content="NeRF Code"><meta property="og:description" content="Desc Text."><meta property="og:type" content="article"><meta property="og:url" content="https://net-maker.github.io/netmaker.github.io/post/nerfcode/"><meta property="og:image" content="https://net-maker.github.io/netmaker.github.io/%3Cimage%20path/url%3E"><meta property="article:section" content="post"><meta property="article:published_time" content="2023-08-15T11:30:03+00:00"><meta property="article:modified_time" content="2023-08-15T11:30:03+00:00"><meta property="og:site_name" content="ExampleSite"><meta name=twitter:card content="summary_large_image"><meta name=twitter:image content="https://net-maker.github.io/netmaker.github.io/%3Cimage%20path/url%3E"><meta name=twitter:title content="NeRF Code"><meta name=twitter:description content="Desc Text."><script type=application/ld+json>{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Posts","item":"https://net-maker.github.io/netmaker.github.io/post/"},{"@type":"ListItem","position":2,"name":"NeRF Code","item":"https://net-maker.github.io/netmaker.github.io/post/nerfcode/"}]}</script><script type=application/ld+json>{"@context":"https://schema.org","@type":"BlogPosting","headline":"NeRF Code","name":"NeRF Code","description":"Desc Text.","keywords":["NeRF"],"articleBody":"本次使用的 NeRF 实现是 pytorch 版的 NeRF，它的代码量并不是很大，并且代码文件较少，主要是熟悉一下数据格式和训练流程\n参考文章：\n总体流程: NeRF 虽然涉及了大量 CG 的知识，但是总体的流程还是深度学习的一个流程，只不过在实现方法中两种领域的知识几乎是各占一半，我们首先当以深度学习的角度去解读它 读取数据：获取图片和对应的相机参数（变化坐标、俯仰角、屏幕尺寸、焦距） 光线采样：根据相机参数，我们计算每个像素所对应的 camera ray batch 训练：对所有的 ray 批采样 渲染，求损失函数，再优化 采样是一个比较关键的点，NeRF 中的采样策略能够通过超参数来调节（是否使用粗糙-精细网络结构） NeRF 的数据也是比较关键的，通过了解数据的格式、内容，能够让我们训练出自己的数据，也是玩转 NeRF 的一个关键 数据 数据格式 NeRF 下的数据如上图所示，我们通过 lego 这个例子来解读：\ntest、train、val 中存放的是所需要的图片（即一个物体的不同视角）\ntransforms_xxx.json：\n存放的是 camera2world 的转置矩阵（是世界坐标转相机坐标还是相机坐标转世界坐标？）\n载入数据 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 def train(): _# 设置参数_ parser = config_parser() args = parser.parse_args() ... elif args.dataset_type == 'blender': images, poses, render_poses, hwf, i_split = load_blender_data(args.datadir, args.half_res, args.testskip) print('Loaded blender', images.shape, render_poses.shape, hwf, args.datadir) i_train, i_val, i_test = i_split _# 设定边界框的远近边界_ near = 2. far = 6. _# 将 RGBA 转换成 RGB 图像_ if args.white_bkgd: _# 如果使用白色背景_ images = images[...,:3]*images[...,-1:] + (1.-images[...,-1:]) else: images = images[...,:3] 在 NeRF 的 pytorch 实现中能够载入四种不同形式的数据，我们的 lego 模型则是 blender 这一 type 的，四种数据类型分别是：\nBlender llff LINEMOD Deepvoxel 观察上述代码的第十行，我们不难发现，数据的载入主要是在 load_blender_data()这个函数中的，我们进入这个函数的代码：\n1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26 27 28 29 30 31 32 33 34 35 36 37 38 39 40 41 42 43 44 45 46 47 48 49 50 51 52 53 54 55 56 57 58 59 60 61 62 63 64 65 66 67 68 def load_blender_data(basedir, half_res=False, testskip=1): \"\"\" :param basedir: 数据文件夹路径 :param half_res: 是否对图像进行半裁剪 :param testskip: 挑选测试数据集的跳跃步长，以实现类似shuffer的效果？ :return: \"\"\" splits = ['train', 'val', 'test'] metas = {} for s in splits: # 分别加载三个 .json 文件，保存到字典中 with open(os.path.join(basedir, 'transforms_{}.json'.format(s)), 'r') as fp: metas[s] = json.load(fp) all_imgs = [] all_poses = [] counts = [0] for s in splits: meta = metas[s] # 加载 .json 文件中的内容 imgs = [] poses = [] # 如果是 train 文件夹，连续读取图像数据 if s=='train' or testskip==0: skip = 1 else: skip = testskip for frame in meta['frames'][::skip]: # 以指定步长读取列表中的字典 fname = os.path.join(basedir, frame['file_path'] + '.png') imgs.append(imageio.imread(fname)) # 将读取到的图像文件添加到图像列表中 poses.append(np.array(frame['transform_matrix'])) # 读取转置矩阵 imgs = (np.array(imgs) / 255.).astype(np.float32) # 此时 图像数组是一个 [n, H, W, 4] 的数组 #【why 4？】 Answer： poses = np.array(poses).astype(np.float32) # [n, 4, 4] counts.append(counts[-1] + imgs.shape[0]) # 用于标定到train、test、val all_imgs.append(imgs) # 包含了 train、test、val 的图像的列表 all_poses.append(poses) i_split = [np.arange(counts[i], counts[i+1]) for i in range(3)] imgs = np.concatenate(all_imgs, 0) # 把列表聚合称为一个数组 [N, H, W, 4] poses = np.concatenate(all_poses, 0) H, W = imgs[0].shape[:2] camera_angle_x = float(meta['camera_angle_x']) focal = .5 * W / np.tan(.5 * camera_angle_x) # 计算焦距 # 制作用于测试训练效果的 渲染pose render_poses = torch.stack([pose_spherical(angle, -30.0, 4.0) for angle in np.linspace(-180,180,40+1)[:-1]], 0) # 为了节省内存开销可以选择只加载一半的数据，这里不再展开解释 if half_res: H = H//2 W = W//2 focal = focal/2. imgs_half_res = np.zeros((imgs.shape[0], H, W, 4)) for i, img in enumerate(imgs): imgs_half_res[i] = cv2.resize(img, (W, H), interpolation=cv2.INTER_AREA) imgs = imgs_half_res # imgs = tf.image.resize_area(imgs, [400, 400]).numpy() return imgs, poses, render_poses, [H, W, focal], i_split 通过对代码的分析，可以得出返回值的含义：\nimgs : 根据 .json 文件加载到的所有图像数据。shape：（N，H，W，4）N 代表用于 train、test、val 的总数量 poses : 转置矩阵。shape：（N，4，4） render_poses : 用于测试的 pose 。shape：（40，4，4） i_split : [[0:train], [train:val], [val:test]] [H，W，focal]：宽，高，焦距 模型初始化 得到了上一节的数据之后，我们透过 train（）函数的走向，可以发现下一步就是光线生成。\n我们模拟的光线其实就是空间中一组离散的点坐标，通过这组点坐标，我们就能够利用 NeRF 的 MLP 生成对应点的密度和颜色\ntrain 我们跟随 train（）函数的代码往下推进\n1 2 3 4 5 6 7 8 9 10 11 12 def train(): ... # 加载数据 ... if K is None: K = np.array([ [focal, 0, 0.5*W], [0, focal, 0.5*H], [0, 0, 1] ]) #这个K是相机的内参，作用：focal就是焦距，0.5W，0.5H就是图像的原点 初始化 NeRF 网络：\n1 2 3 4 5 6 7 8 9 10 11 12 13 def train(): ... # 初始化 NeRF 网络模型 render_kwargs_train, render_kwargs_test, start, grad_vars, optimizer = create_nerf(args) bds_dict = { 'near' : near, 'far' : far, } # 更新字典，加入三维空间的边界框 bounding box render_kwargs_train.update(bds_dict) render_kwargs_test.update(bds_dict) ... create_nerf 初始化主要通过函数 create_nerf（）实现，我们接着进入 create_nerf（）的代码\n1 2 3 def create_nerf(args): embed_fn, input_ch = get_embedder(args.multires, args.i_embed) ... 这个 get_embedder 函数对应的就是论文中的位置编码部分，给定返回的编码器 embed_fn 一个输入，就能够获得编码后的结果，公式如下（位置编码公式）：\nget_embedder 该函数的具体实现：\n1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26 27 28 29 30 31 32 33 34 35 36 37 38 39 40 41 42 43 44 45 46 47 48 49 50 51 52 def get_embedder(multires, i=0): if i == -1: return nn.Identity(), 3 #原封不动返回，不进行编码 embed_kwargs = { 'include_input' : True, # 如果为真，最终的编码结果包含原始坐标 'input_dims' : 3, # 输入给编码器的数据的维度 'max_freq_log2' : multires-1, 'num_freqs' : multires, # 即论文中 5.1 节位置编码公式中的 L 'log_sampling' : True, 'periodic_fns' : [torch.sin, torch.cos], } embedder_obj = Embedder(**embed_kwargs) embed = lambda x, eo=embedder_obj : eo.embed(x) # embed 现在相当于一个编码器，具体的编码公式与论文中的一致。 return embed, embedder_obj.out_dim class Embedder: def __init__(self, **kwargs): self.kwargs = kwargs self.create_embedding_fn() def create_embedding_fn(self): embed_fns = [] d = self.kwargs['input_dims'] out_dim = 0 # 如果包含原始位置 if self.kwargs['include_input']: embed_fns.append(lambda x : x) # 把一个不对数据做出改变的匿名函数添加到列表中 out_dim += d max_freq = self.kwargs['max_freq_log2'] N_freqs = self.kwargs['num_freqs'] if self.kwargs['log_sampling']: freq_bands = 2.**torch.linspace(0., max_freq, steps=N_freqs) # 得到 [2^0, 2^1, ... ,2^(L-1)] 参考论文 5.1 中的公式 else: freq_bands = torch.linspace(2.**0., 2.**max_freq, steps=N_freqs) # 得到 [2^0, 2^(L-1)] 的等差数列，列表中有 L 个元素 for freq in freq_bands: for p_fn in self.kwargs['periodic_fns']: embed_fns.append(lambda x, p_fn=p_fn, freq=freq : p_fn(x * freq)) # sin(x * 2^n) 参考位置编码公式 out_dim += d # 每使用子编码公式一次就要把输出维度加 3，因为每个待编码的位置维度是 3 self.embed_fns = embed_fns # 相当于是一个编码公式列表 self.out_dim = out_dim def embed(self, inputs): # 对各个输入进行编码，给定一个输入，使用编码列表中的公式分别对他编码 return torch.cat([fn(inputs) for fn in self.embed_fns], -1) 初始化网络结构 1 2 3 4 5 6 7 8 9 10 11 12 13 14 def create_nerf(args): ... # 初始化MLP模型参数，网络的层级模型详见论文 补充材料 pic 7 model = NeRF(D=args.netdepth, W=args.netwidth, #网络的宽度和深度都是可以从超参数中定义的 input_ch=input_ch, output_ch=output_ch, skips=skips, input_ch_views=input_ch_views, use_viewdirs=args.use_viewdirs).to(device) # 模型中的梯度变量 grad_vars = list(model.parameters()) ... # 定义一个查询点的颜色和密度的匿名函数，实际上给定点坐标，方向，以及查询网络，我们就可以得到该点在该网络下的输出（[rgb,alpha]） network_query_fn = lambda inputs, viewdirs, network_fn : run_network(inputs, viewdirs, network_fn, embed_fn=embed_fn, embeddirs_fn=embeddirs_fn, netchunk=args.netchunk # 网络批处理查询点的数量) 这里就来到了我们的第一个 MLP 映射：通过 5D 输入获得颜色和密度的映射\n在代码中为 run_network()函数，这是一个匿名函数，network_fn 变量就是我们的 model 变量，接下来我们分析 run_network()函数\nrun_network 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 def run_network(inputs, viewdirs, fn, embed_fn, embeddirs_fn, netchunk=1024*64): \"\"\" 对 input 进行处理，应用 神经网络 fn \"\"\" inputs_flat = torch.reshape(inputs, [-1, inputs.shape[-1]]) embedded = embed_fn(inputs_flat) # 对输入进行位置编码，得到编码后的结果，是一个 array 数组 if viewdirs is not None: # 视图不为 None，即输入了视图方向，那么我们就应该考虑对视图方向作出处理，用以生成颜色 input_dirs = viewdirs[:, None].expand(inputs.shape) input_dirs_flat = torch.reshape(input_dirs, [-1, input_dirs.shape[-1]]) embedded_dirs = embeddirs_fn(input_dirs_flat) # 对输入方向进行编码 embedded = torch.cat([embedded, embedded_dirs], -1) # 将编码后的位置和方向聚合到一起 outputs_flat = batchify(fn, netchunk)(embedded) # 将编码过的点以批处理的形式输入到 网络模型 中得到 输出（RGB,A） outputs = torch.reshape(outputs_flat, list(inputs.shape[:-1]) + [outputs_flat.shape[-1]]) return outputs 这里就是一个将输入的数据编码然后输入到 network 中的，不过为什么我们需要专门定义一个匿名函数来实现这样一个过程了，除了代码的美观性，我认为和 NeRF 原文中的 coarse to fine 有关，我们需要定义两个网络模型，所以输入的网络也是不同的。\n初始化完成 我们接着来到 create_nerf（）函数中\n1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26 27 28 29 30 31 32 33 34 def create_nerf(args): ... # 创建网络的优化器 optimizer = torch.optim.Adam(params=grad_vars, lr=args.lrate, betas=(0.9, 0.999)) ... # 关于加载已有模型的部分我们不在逐行分析，对整体算法的分析没有任何影响 # 此处忽略了精细网络的加载过程 ... # 注意看，现在整体的初始化已经完成，我们需要对返回值进行一些处理 render_kwargs_train = { 'network_query_fn' : network_query_fn, 'perturb' : args.perturb, 'N_importance' : args.N_importance, 'network_fine' : model_fine, 'N_samples' : args.N_samples, 'network_fn' : model, 'use_viewdirs' : args.use_viewdirs, 'white_bkgd' : args.white_bkgd, 'raw_noise_std' : args.raw_noise_std, } # NDC 空间，只对前向场景有效，具体解释可以看论文，这里不再展开 if args.dataset_type != 'llff' or args.no_ndc: print('Not ndc!') render_kwargs_train['ndc'] = False render_kwargs_train['lindisp'] = args.lindisp render_kwargs_test = {k : render_kwargs_train[k] for k in render_kwargs_train} render_kwargs_test['perturb'] = False render_kwargs_test['raw_noise_std'] = 0. return render_kwargs_train, render_kwargs_test, start, grad_vars, optimizer 对 render_kwargs_train 进行分析：\n’network_query_fn’ : network_query_fn\n上文已经解释过了，这是一个匿名函数， 给这个函数输入位置坐标，方向坐标，以及神经网络，就可以利用神经网络返回该点对应的 颜色和密度 ‘perturb’ : args.perturb\n扰动，对整体算法理解没有影响 ‘N_importance’ : args.N_importance\n每条光线上细采样点的数量 ’network_fine’ : model_fine\n论文中的 精细网络 ‘N_samples’ : args.N_samples\n每条光线上粗采样点的数量 ’network_fn’ : model\n论文中的 粗网络 ‘use_viewdirs’ : args.use_viewdirs\n是否使用视点方向，影响到神经网络是否输出颜色 ‘white_bkgd’ : args.white_bkgd\n如果为 True 将输入的 png 图像的透明部分转换成白色 ‘raw_noise_std’ : args.raw_noise_std\n归一化密度 在齐次裁剪空间的基础上进行透视除法（perspective division)或称齐次除法（homogeneous division),得到的坐标叫做 NDC 空间坐标。\n标准化设备坐标(Normalized Device Coordinates, NDC)\n光线生成 经过前面读入数据和模型初始化之后，我们开始设置光线的操作，解读到现在，我们的基本流程如下所示：\n1 2 3 4 5 6 7 8 9 10 11 12 def train(): # 1、加载数据 if args.dataset_type == 'llff': elif ... ... # 2、初始化网络模型 render_kwargs_train, render_kwargs_test, start, grad_vars, optimizer = create_nerf(args) ... if args.render_only: ... 这里的 arg.render_only: 当我们设置为 True 时，网络就不再进行训练，而是使用训练好了的模型进行渲染，直接得到渲染结果。\n下面开始光线生成的代码内容：\n1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 def train(): ... # 开始读取光线以及光线对应的像素值 N_rand = args.N_rand # 是否以批处理的形式生成光线 use_batching = not args.no_batching if use_batching: print('get rays') rays = np.stack([get_rays_np(H, W, K, p) for p in poses[:,:3,:4]], 0) # [N, ro+rd, H, W, 3] print('done, concats') rays_rgb = np.concatenate([rays, images[:, None]], 1) # [N, ro+rd+rgb, H, W, 3] 这里把光线的原点、方向、以及这条光线对应的像素颜色结合到一起，便于后面的 shuffle 操作 rays_rgb = np.transpose(rays_rgb, [0,2,3,1,4]) # [N, H, W, ro+rd+rgb, 3] rays_rgb = np.stack([rays_rgb[i] for i in i_train], 0) # train images only rays_rgb = np.reshape(rays_rgb, [-1,3,3]) # [(N-1)*H*W, ro+rd+rgb, 3] rays_rgb = rays_rgb.astype(np.float32) print('shuffle rays') np.random.shuffle(rays_rgb) print('done') i_batch = 0 例子中的 lego 小车中 use_batching = False,不过了解这部分函数也会带来收获，我们通过 print()中的内容不难发现主要实现是这个 get_rays_np()函数实现了生成，我们进入到 get_rays_np 函数中：\n1 2 3 4 5 6 7 8 def get_rays_np(H, W, K, c2w): i, j = np.meshgrid(np.arange(W, dtype=np.float32), np.arange(H, dtype=np.float32), indexing='xy') dirs = np.stack([(i-K[0][2])/K[0][0], -(j-K[1][2])/K[1][1], -np.ones_like(i)], -1) # Rotate ray directions from camera frame to the world frame rays_d = np.sum(dirs[..., np.newaxis, :] * c2w[:3,:3], -1) # dot product, equals to: [c2w.dot(dir) for dir in dirs] # Translate camera frame's origin to the world frame. It is the origin of all rays. rays_o = np.broadcast_to(c2w[:3,-1], np.shape(rays_d)) return rays_o, rays_d np.meshgrid(a, b，indexing = “xy”) 函数会返回 b.shape() 行 ，a.shape() 列的二维数组。因此 i, j 都是 [H, W] 的二维数组。i 的每一行代表 x 轴坐标，j 的每一行代表 y 轴坐标。如此一来我们得到了一个图片的每个像素点的坐标。同时我们还能对横坐标和纵坐标进行单独的操作。\n接下来就是使用前文中提到的相机内参来计算每个像素坐标相对于光心的单位方向\n1 2 3 4 5 6 7 8 9 10 11 12 13 dirs = np.stack([(i-K[0][2])/K[0][0], -(j-K[1][2])/K[1][1], -np.ones_like(i)], -1) \"\"\" #K = np.array([ #[focal, 0, 0.5*W], #[0, focal, 0.5*H], #[0, 0, 1] i是存储x坐标的二维数组，j是存储y坐标的数组 上面的操作相当于是让每个坐标减去了光心的坐标，然后除以焦距 那么这样做的实际意义是什么呢 我们相当于得到了一个方向向量（（i-W/2）/f，-(j-H/2)/f） 这里的Y是负数，而X不是，这一问题查阅了许久，最终发现： 原输入的是opencv坐标系下的图像，而我们需要转化为opengl坐标下的图像，此时我们的y，z都需要反转（这里还是不太清楚具体原因，还需要查资料） \"\"\" 开始训练 在前面的部分，我们完成了数据的载入、模型的初始化、生成了所有图片的光线原点以及方向，接下来我们就可以开始模型的训练了。\n1 2 3 4 5 6 7 8 9 10 def train(): ... # 4、开始训练 for i in trange(start, N_iters): if use_batching: ... else: ... 问题总结： ","wordCount":"1493","inLanguage":"en","image":"https://net-maker.github.io/netmaker.github.io/%3Cimage%20path/url%3E","datePublished":"2023-08-15T11:30:03Z","dateModified":"2023-08-15T11:30:03Z","author":{"@type":"Person","name":"NetMaker"},"mainEntityOfPage":{"@type":"WebPage","@id":"https://net-maker.github.io/netmaker.github.io/post/nerfcode/"},"publisher":{"@type":"Organization","name":"CookMaker's Website","logo":{"@type":"ImageObject","url":"https://net-maker.github.io/netmaker.github.io/%3Clink%20/%20abs%20url%3E"}}}</script></head><body id=top><script>localStorage.getItem("pref-theme")==="dark"?document.body.classList.add("dark"):localStorage.getItem("pref-theme")==="light"?document.body.classList.remove("dark"):window.matchMedia("(prefers-color-scheme: dark)").matches&&document.body.classList.add("dark")</script><header class=header><nav class=nav><div class=logo><a href=https://net-maker.github.io/netmaker.github.io/ accesskey=h title="Home (Alt + H)"><img src=https://net-maker.github.io/apple-touch-icon.png alt aria-label=logo height=35>Home</a><div class=logo-switches><button id=theme-toggle accesskey=t title="(Alt + T)"><svg id="moon" xmlns="http://www.w3.org/2000/svg" width="24" height="18" viewBox="0 0 24 24" fill="none" stroke="currentcolor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z"/></svg><svg id="sun" xmlns="http://www.w3.org/2000/svg" width="24" height="18" viewBox="0 0 24 24" fill="none" stroke="currentcolor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg></button></div></div><ul id=menu><li><a href=https://net-maker.github.io/netmaker.github.io/about title=about><span>about</span></a></li><li><a href=https://net-maker.github.io/netmaker.github.io/tags/ title=tags><span>tags</span></a></li><li><a href=https://net-maker.github.io/netmaker.github.io/archives/ title=archives><span>archives</span></a></li><li><a href=https://net-maker.github.io/netmaker.github.io/search title="search (Alt + /)" accesskey=/><span>search</span></a></li></ul></nav></header><main class=main><article class=post-single><header class=post-header><div class=breadcrumbs><a href=https://net-maker.github.io/netmaker.github.io/>Home</a>&nbsp;»&nbsp;<a href=https://net-maker.github.io/netmaker.github.io/post/>Posts</a></div><h1 class=post-title>NeRF Code</h1><div class=post-description>Desc Text.</div><div class=post-meta><span title='2023-08-15 11:30:03 +0000 +0000'>August 15, 2023</span>&nbsp;·&nbsp;8 min&nbsp;·&nbsp;1493 words&nbsp;·&nbsp;NetMaker&nbsp;|&nbsp;<a href=https://github.com/%3cpath_to_repo%3e/content/post/NeRFcode.md rel="noopener noreferrer" target=_blank>Suggest Changes</a></div></header><div class=toc><details><summary accesskey=c title="(Alt + C)"><span class=details>Table of Contents</span></summary><div class=inner><nav id=TableOfContents><ul><li><a href=#数据格式>数据格式</a></li><li><a href=#载入数据>载入数据</a></li></ul><ul><li><a href=#train>train</a><ul><li><a href=#create_nerf>create_nerf</a></li></ul></li></ul><ul><li><a href=#开始训练>开始训练</a></li></ul></nav></div></details></div><div class=post-content><p>本次使用的 NeRF 实现是 pytorch 版的 NeRF，它的代码量并不是很大，并且代码文件较少，主要是熟悉一下数据格式和训练流程</p><p>参考文章：</p><h1 id=总体流程>总体流程:<a hidden class=anchor aria-hidden=true href=#总体流程>#</a></h1><ul><li>NeRF 虽然涉及了大量 CG 的知识，但是总体的流程还是深度学习的一个流程，只不过在实现方法中两种领域的知识几乎是各占一半，我们首先当以深度学习的角度去解读它</li></ul><ol><li>读取数据：获取图片和对应的相机参数（变化坐标、俯仰角、屏幕尺寸、焦距）</li><li>光线采样：根据相机参数，我们计算每个像素所对应的 camera ray</li><li>batch 训练：对所有的 ray 批采样</li><li>渲染，求损失函数，再优化</li></ol><ul><li>采样是一个比较关键的点，NeRF 中的采样策略能够通过超参数来调节（是否使用粗糙-精细网络结构）</li><li>NeRF 的数据也是比较关键的，通过了解数据的格式、内容，能够让我们训练出自己的数据，也是玩转 NeRF 的一个关键</li></ul><h1 id=数据>数据<a hidden class=anchor aria-hidden=true href=#数据>#</a></h1><h2 id=数据格式>数据格式<a hidden class=anchor aria-hidden=true href=#数据格式>#</a></h2><p><img loading=lazy src=static/PXycbY6Tloj2d2xjgYlcAbcwnJe.png alt></p><p>NeRF 下的数据如上图所示，我们通过 lego 这个例子来解读：</p><p>test、train、val 中存放的是所需要的图片（即一个物体的不同视角）</p><p>transforms_xxx.json：</p><p>存放的是 camera2world 的转置矩阵（是世界坐标转相机坐标还是相机坐标转世界坐标？）</p><h2 id=载入数据>载入数据<a hidden class=anchor aria-hidden=true href=#载入数据>#</a></h2><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre tabindex=0 class=chroma><code><span class=lnt> 1
+</span><span class=lnt> 2
+</span><span class=lnt> 3
+</span><span class=lnt> 4
+</span><span class=lnt> 5
+</span><span class=lnt> 6
+</span><span class=lnt> 7
+</span><span class=lnt> 8
+</span><span class=lnt> 9
+</span><span class=lnt>10
+</span><span class=lnt>11
+</span><span class=lnt>12
+</span><span class=lnt>13
+</span><span class=lnt>14
+</span><span class=lnt>15
+</span><span class=lnt>16
+</span><span class=lnt>17
+</span><span class=lnt>18
+</span><span class=lnt>19
+</span><span class=lnt>20
+</span><span class=lnt>21
+</span><span class=lnt>22
+</span><span class=lnt>23
+</span></code></pre></td><td class=lntd><pre tabindex=0 class=chroma><code class=language-python data-lang=python><span class=line><span class=cl><span class=k>def</span> <span class=nf>train</span><span class=p>():</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>    <span class=n>_</span><span class=c1># 设置参数_</span>
+</span></span><span class=line><span class=cl>    <span class=n>parser</span> <span class=o>=</span> <span class=n>config_parser</span><span class=p>()</span>
+</span></span><span class=line><span class=cl>    <span class=n>args</span> <span class=o>=</span> <span class=n>parser</span><span class=o>.</span><span class=n>parse_args</span><span class=p>()</span>
+</span></span><span class=line><span class=cl>    
+</span></span><span class=line><span class=cl>    <span class=o>...</span>
+</span></span><span class=line><span class=cl>    
+</span></span><span class=line><span class=cl>    <span class=k>elif</span> <span class=n>args</span><span class=o>.</span><span class=n>dataset_type</span> <span class=o>==</span> <span class=s1>&#39;blender&#39;</span><span class=p>:</span>
+</span></span><span class=line><span class=cl>            <span class=n>images</span><span class=p>,</span> <span class=n>poses</span><span class=p>,</span> <span class=n>render_poses</span><span class=p>,</span> <span class=n>hwf</span><span class=p>,</span> <span class=n>i_split</span> <span class=o>=</span> <span class=n>load_blender_data</span><span class=p>(</span><span class=n>args</span><span class=o>.</span><span class=n>datadir</span><span class=p>,</span> <span class=n>args</span><span class=o>.</span><span class=n>half_res</span><span class=p>,</span> <span class=n>args</span><span class=o>.</span><span class=n>testskip</span><span class=p>)</span>
+</span></span><span class=line><span class=cl>            <span class=nb>print</span><span class=p>(</span><span class=s1>&#39;Loaded blender&#39;</span><span class=p>,</span> <span class=n>images</span><span class=o>.</span><span class=n>shape</span><span class=p>,</span> <span class=n>render_poses</span><span class=o>.</span><span class=n>shape</span><span class=p>,</span> <span class=n>hwf</span><span class=p>,</span> <span class=n>args</span><span class=o>.</span><span class=n>datadir</span><span class=p>)</span>
+</span></span><span class=line><span class=cl>            <span class=n>i_train</span><span class=p>,</span> <span class=n>i_val</span><span class=p>,</span> <span class=n>i_test</span> <span class=o>=</span> <span class=n>i_split</span>
+</span></span><span class=line><span class=cl>                
+</span></span><span class=line><span class=cl>                <span class=n>_</span><span class=c1># 设定边界框的远近边界_</span>
+</span></span><span class=line><span class=cl>            <span class=n>near</span> <span class=o>=</span> <span class=mf>2.</span>
+</span></span><span class=line><span class=cl>            <span class=n>far</span> <span class=o>=</span> <span class=mf>6.</span>
+</span></span><span class=line><span class=cl>                
+</span></span><span class=line><span class=cl>                <span class=n>_</span><span class=c1># 将 RGBA 转换成 RGB 图像_</span>
+</span></span><span class=line><span class=cl>            <span class=k>if</span> <span class=n>args</span><span class=o>.</span><span class=n>white_bkgd</span><span class=p>:</span>
+</span></span><span class=line><span class=cl>                    <span class=n>_</span><span class=c1># 如果使用白色背景_</span>
+</span></span><span class=line><span class=cl>                <span class=n>images</span> <span class=o>=</span> <span class=n>images</span><span class=p>[</span><span class=o>...</span><span class=p>,:</span><span class=mi>3</span><span class=p>]</span><span class=o>*</span><span class=n>images</span><span class=p>[</span><span class=o>...</span><span class=p>,</span><span class=o>-</span><span class=mi>1</span><span class=p>:]</span> <span class=o>+</span> <span class=p>(</span><span class=mf>1.</span><span class=o>-</span><span class=n>images</span><span class=p>[</span><span class=o>...</span><span class=p>,</span><span class=o>-</span><span class=mi>1</span><span class=p>:])</span>
+</span></span><span class=line><span class=cl>            <span class=k>else</span><span class=p>:</span>
+</span></span><span class=line><span class=cl>                <span class=n>images</span> <span class=o>=</span> <span class=n>images</span><span class=p>[</span><span class=o>...</span><span class=p>,:</span><span class=mi>3</span><span class=p>]</span>
+</span></span></code></pre></td></tr></table></div></div><p>在 NeRF 的 pytorch 实现中能够载入四种不同形式的数据，我们的 lego 模型则是 blender 这一 type 的，四种数据类型分别是：</p><ul><li>Blender</li><li>llff</li><li>LINEMOD</li><li>Deepvoxel</li></ul><p>观察上述代码的第十行，我们不难发现，数据的载入主要是在 load_blender_data()这个函数中的，我们进入这个函数的代码：</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre tabindex=0 class=chroma><code><span class=lnt> 1
+</span><span class=lnt> 2
+</span><span class=lnt> 3
+</span><span class=lnt> 4
+</span><span class=lnt> 5
+</span><span class=lnt> 6
+</span><span class=lnt> 7
+</span><span class=lnt> 8
+</span><span class=lnt> 9
+</span><span class=lnt>10
+</span><span class=lnt>11
+</span><span class=lnt>12
+</span><span class=lnt>13
+</span><span class=lnt>14
+</span><span class=lnt>15
+</span><span class=lnt>16
+</span><span class=lnt>17
+</span><span class=lnt>18
+</span><span class=lnt>19
+</span><span class=lnt>20
+</span><span class=lnt>21
+</span><span class=lnt>22
+</span><span class=lnt>23
+</span><span class=lnt>24
+</span><span class=lnt>25
+</span><span class=lnt>26
+</span><span class=lnt>27
+</span><span class=lnt>28
+</span><span class=lnt>29
+</span><span class=lnt>30
+</span><span class=lnt>31
+</span><span class=lnt>32
+</span><span class=lnt>33
+</span><span class=lnt>34
+</span><span class=lnt>35
+</span><span class=lnt>36
+</span><span class=lnt>37
+</span><span class=lnt>38
+</span><span class=lnt>39
+</span><span class=lnt>40
+</span><span class=lnt>41
+</span><span class=lnt>42
+</span><span class=lnt>43
+</span><span class=lnt>44
+</span><span class=lnt>45
+</span><span class=lnt>46
+</span><span class=lnt>47
+</span><span class=lnt>48
+</span><span class=lnt>49
+</span><span class=lnt>50
+</span><span class=lnt>51
+</span><span class=lnt>52
+</span><span class=lnt>53
+</span><span class=lnt>54
+</span><span class=lnt>55
+</span><span class=lnt>56
+</span><span class=lnt>57
+</span><span class=lnt>58
+</span><span class=lnt>59
+</span><span class=lnt>60
+</span><span class=lnt>61
+</span><span class=lnt>62
+</span><span class=lnt>63
+</span><span class=lnt>64
+</span><span class=lnt>65
+</span><span class=lnt>66
+</span><span class=lnt>67
+</span><span class=lnt>68
+</span></code></pre></td><td class=lntd><pre tabindex=0 class=chroma><code class=language-python data-lang=python><span class=line><span class=cl><span class=k>def</span> <span class=nf>load_blender_data</span><span class=p>(</span><span class=n>basedir</span><span class=p>,</span> <span class=n>half_res</span><span class=o>=</span><span class=kc>False</span><span class=p>,</span> <span class=n>testskip</span><span class=o>=</span><span class=mi>1</span><span class=p>):</span>
+</span></span><span class=line><span class=cl>        <span class=s2>&#34;&#34;&#34;
+</span></span></span><span class=line><span class=cl><span class=s2>        :param basedir: 数据文件夹路径
+</span></span></span><span class=line><span class=cl><span class=s2>        :param half_res: 是否对图像进行半裁剪
+</span></span></span><span class=line><span class=cl><span class=s2>        :param testskip: 挑选测试数据集的跳跃步长，以实现类似shuffer的效果？
+</span></span></span><span class=line><span class=cl><span class=s2>        :return: 
+</span></span></span><span class=line><span class=cl><span class=s2>        &#34;&#34;&#34;</span>
+</span></span><span class=line><span class=cl>    <span class=n>splits</span> <span class=o>=</span> <span class=p>[</span><span class=s1>&#39;train&#39;</span><span class=p>,</span> <span class=s1>&#39;val&#39;</span><span class=p>,</span> <span class=s1>&#39;test&#39;</span><span class=p>]</span>
+</span></span><span class=line><span class=cl>    <span class=n>metas</span> <span class=o>=</span> <span class=p>{}</span>
+</span></span><span class=line><span class=cl>    <span class=k>for</span> <span class=n>s</span> <span class=ow>in</span> <span class=n>splits</span><span class=p>:</span>
+</span></span><span class=line><span class=cl>            <span class=c1># 分别加载三个 .json 文件，保存到字典中</span>
+</span></span><span class=line><span class=cl>        <span class=k>with</span> <span class=nb>open</span><span class=p>(</span><span class=n>os</span><span class=o>.</span><span class=n>path</span><span class=o>.</span><span class=n>join</span><span class=p>(</span><span class=n>basedir</span><span class=p>,</span> <span class=s1>&#39;transforms_</span><span class=si>{}</span><span class=s1>.json&#39;</span><span class=o>.</span><span class=n>format</span><span class=p>(</span><span class=n>s</span><span class=p>)),</span> <span class=s1>&#39;r&#39;</span><span class=p>)</span> <span class=k>as</span> <span class=n>fp</span><span class=p>:</span>
+</span></span><span class=line><span class=cl>            <span class=n>metas</span><span class=p>[</span><span class=n>s</span><span class=p>]</span> <span class=o>=</span> <span class=n>json</span><span class=o>.</span><span class=n>load</span><span class=p>(</span><span class=n>fp</span><span class=p>)</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>    <span class=n>all_imgs</span> <span class=o>=</span> <span class=p>[]</span>
+</span></span><span class=line><span class=cl>    <span class=n>all_poses</span> <span class=o>=</span> <span class=p>[]</span>
+</span></span><span class=line><span class=cl>    <span class=n>counts</span> <span class=o>=</span> <span class=p>[</span><span class=mi>0</span><span class=p>]</span>
+</span></span><span class=line><span class=cl>    
+</span></span><span class=line><span class=cl>    <span class=k>for</span> <span class=n>s</span> <span class=ow>in</span> <span class=n>splits</span><span class=p>:</span>
+</span></span><span class=line><span class=cl>        <span class=n>meta</span> <span class=o>=</span> <span class=n>metas</span><span class=p>[</span><span class=n>s</span><span class=p>]</span>  <span class=c1># 加载 .json 文件中的内容</span>
+</span></span><span class=line><span class=cl>        <span class=n>imgs</span> <span class=o>=</span> <span class=p>[]</span>
+</span></span><span class=line><span class=cl>        <span class=n>poses</span> <span class=o>=</span> <span class=p>[]</span>
+</span></span><span class=line><span class=cl>        <span class=c1># 如果是 train 文件夹，连续读取图像数据</span>
+</span></span><span class=line><span class=cl>        <span class=k>if</span> <span class=n>s</span><span class=o>==</span><span class=s1>&#39;train&#39;</span> <span class=ow>or</span> <span class=n>testskip</span><span class=o>==</span><span class=mi>0</span><span class=p>:</span>
+</span></span><span class=line><span class=cl>            <span class=n>skip</span> <span class=o>=</span> <span class=mi>1</span>
+</span></span><span class=line><span class=cl>        <span class=k>else</span><span class=p>:</span>
+</span></span><span class=line><span class=cl>            <span class=n>skip</span> <span class=o>=</span> <span class=n>testskip</span>
+</span></span><span class=line><span class=cl>         
+</span></span><span class=line><span class=cl>        <span class=k>for</span> <span class=n>frame</span> <span class=ow>in</span> <span class=n>meta</span><span class=p>[</span><span class=s1>&#39;frames&#39;</span><span class=p>][::</span><span class=n>skip</span><span class=p>]:</span>
+</span></span><span class=line><span class=cl>                <span class=c1># 以指定步长读取列表中的字典</span>
+</span></span><span class=line><span class=cl>            <span class=n>fname</span> <span class=o>=</span> <span class=n>os</span><span class=o>.</span><span class=n>path</span><span class=o>.</span><span class=n>join</span><span class=p>(</span><span class=n>basedir</span><span class=p>,</span> <span class=n>frame</span><span class=p>[</span><span class=s1>&#39;file_path&#39;</span><span class=p>]</span> <span class=o>+</span> <span class=s1>&#39;.png&#39;</span><span class=p>)</span>
+</span></span><span class=line><span class=cl>            
+</span></span><span class=line><span class=cl>            <span class=n>imgs</span><span class=o>.</span><span class=n>append</span><span class=p>(</span><span class=n>imageio</span><span class=o>.</span><span class=n>imread</span><span class=p>(</span><span class=n>fname</span><span class=p>))</span>  <span class=c1># 将读取到的图像文件添加到图像列表中</span>
+</span></span><span class=line><span class=cl>            <span class=n>poses</span><span class=o>.</span><span class=n>append</span><span class=p>(</span><span class=n>np</span><span class=o>.</span><span class=n>array</span><span class=p>(</span><span class=n>frame</span><span class=p>[</span><span class=s1>&#39;transform_matrix&#39;</span><span class=p>]))</span>  <span class=c1># 读取转置矩阵</span>
+</span></span><span class=line><span class=cl>        <span class=n>imgs</span> <span class=o>=</span> <span class=p>(</span><span class=n>np</span><span class=o>.</span><span class=n>array</span><span class=p>(</span><span class=n>imgs</span><span class=p>)</span> <span class=o>/</span> <span class=mf>255.</span><span class=p>)</span><span class=o>.</span><span class=n>astype</span><span class=p>(</span><span class=n>np</span><span class=o>.</span><span class=n>float32</span><span class=p>)</span> <span class=c1># 此时 图像数组是一个 [n, H, W, 4] 的数组</span>
+</span></span><span class=line><span class=cl>        <span class=c1>#【why 4？】 Answer： </span>
+</span></span><span class=line><span class=cl>        <span class=n>poses</span> <span class=o>=</span> <span class=n>np</span><span class=o>.</span><span class=n>array</span><span class=p>(</span><span class=n>poses</span><span class=p>)</span><span class=o>.</span><span class=n>astype</span><span class=p>(</span><span class=n>np</span><span class=o>.</span><span class=n>float32</span><span class=p>)</span>  <span class=c1># [n, 4, 4]</span>
+</span></span><span class=line><span class=cl>        <span class=n>counts</span><span class=o>.</span><span class=n>append</span><span class=p>(</span><span class=n>counts</span><span class=p>[</span><span class=o>-</span><span class=mi>1</span><span class=p>]</span> <span class=o>+</span> <span class=n>imgs</span><span class=o>.</span><span class=n>shape</span><span class=p>[</span><span class=mi>0</span><span class=p>])</span>  <span class=c1># 用于标定到train、test、val</span>
+</span></span><span class=line><span class=cl>        
+</span></span><span class=line><span class=cl>        <span class=n>all_imgs</span><span class=o>.</span><span class=n>append</span><span class=p>(</span><span class=n>imgs</span><span class=p>)</span>  <span class=c1># 包含了 train、test、val 的图像的列表</span>
+</span></span><span class=line><span class=cl>        <span class=n>all_poses</span><span class=o>.</span><span class=n>append</span><span class=p>(</span><span class=n>poses</span><span class=p>)</span>
+</span></span><span class=line><span class=cl>    
+</span></span><span class=line><span class=cl>    <span class=n>i_split</span> <span class=o>=</span> <span class=p>[</span><span class=n>np</span><span class=o>.</span><span class=n>arange</span><span class=p>(</span><span class=n>counts</span><span class=p>[</span><span class=n>i</span><span class=p>],</span> <span class=n>counts</span><span class=p>[</span><span class=n>i</span><span class=o>+</span><span class=mi>1</span><span class=p>])</span> <span class=k>for</span> <span class=n>i</span> <span class=ow>in</span> <span class=nb>range</span><span class=p>(</span><span class=mi>3</span><span class=p>)]</span>
+</span></span><span class=line><span class=cl>    
+</span></span><span class=line><span class=cl>    <span class=n>imgs</span> <span class=o>=</span> <span class=n>np</span><span class=o>.</span><span class=n>concatenate</span><span class=p>(</span><span class=n>all_imgs</span><span class=p>,</span> <span class=mi>0</span><span class=p>)</span>  <span class=c1># 把列表聚合称为一个数组 [N, H, W, 4]</span>
+</span></span><span class=line><span class=cl>    <span class=n>poses</span> <span class=o>=</span> <span class=n>np</span><span class=o>.</span><span class=n>concatenate</span><span class=p>(</span><span class=n>all_poses</span><span class=p>,</span> <span class=mi>0</span><span class=p>)</span>
+</span></span><span class=line><span class=cl>    
+</span></span><span class=line><span class=cl>    <span class=n>H</span><span class=p>,</span> <span class=n>W</span> <span class=o>=</span> <span class=n>imgs</span><span class=p>[</span><span class=mi>0</span><span class=p>]</span><span class=o>.</span><span class=n>shape</span><span class=p>[:</span><span class=mi>2</span><span class=p>]</span>
+</span></span><span class=line><span class=cl>    <span class=n>camera_angle_x</span> <span class=o>=</span> <span class=nb>float</span><span class=p>(</span><span class=n>meta</span><span class=p>[</span><span class=s1>&#39;camera_angle_x&#39;</span><span class=p>])</span>
+</span></span><span class=line><span class=cl>    <span class=n>focal</span> <span class=o>=</span> <span class=mf>.5</span> <span class=o>*</span> <span class=n>W</span> <span class=o>/</span> <span class=n>np</span><span class=o>.</span><span class=n>tan</span><span class=p>(</span><span class=mf>.5</span> <span class=o>*</span> <span class=n>camera_angle_x</span><span class=p>)</span>  <span class=c1># 计算焦距</span>
+</span></span><span class=line><span class=cl>    
+</span></span><span class=line><span class=cl>    <span class=c1># 制作用于测试训练效果的 渲染pose</span>
+</span></span><span class=line><span class=cl>    <span class=n>render_poses</span> <span class=o>=</span> <span class=n>torch</span><span class=o>.</span><span class=n>stack</span><span class=p>([</span><span class=n>pose_spherical</span><span class=p>(</span><span class=n>angle</span><span class=p>,</span> <span class=o>-</span><span class=mf>30.0</span><span class=p>,</span> <span class=mf>4.0</span><span class=p>)</span> <span class=k>for</span> <span class=n>angle</span> <span class=ow>in</span> <span class=n>np</span><span class=o>.</span><span class=n>linspace</span><span class=p>(</span><span class=o>-</span><span class=mi>180</span><span class=p>,</span><span class=mi>180</span><span class=p>,</span><span class=mi>40</span><span class=o>+</span><span class=mi>1</span><span class=p>)[:</span><span class=o>-</span><span class=mi>1</span><span class=p>]],</span> <span class=mi>0</span><span class=p>)</span>
+</span></span><span class=line><span class=cl>    
+</span></span><span class=line><span class=cl>    <span class=c1># 为了节省内存开销可以选择只加载一半的数据，这里不再展开解释</span>
+</span></span><span class=line><span class=cl>    <span class=k>if</span> <span class=n>half_res</span><span class=p>:</span>
+</span></span><span class=line><span class=cl>        <span class=n>H</span> <span class=o>=</span> <span class=n>H</span><span class=o>//</span><span class=mi>2</span>
+</span></span><span class=line><span class=cl>        <span class=n>W</span> <span class=o>=</span> <span class=n>W</span><span class=o>//</span><span class=mi>2</span>
+</span></span><span class=line><span class=cl>        <span class=n>focal</span> <span class=o>=</span> <span class=n>focal</span><span class=o>/</span><span class=mf>2.</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>        <span class=n>imgs_half_res</span> <span class=o>=</span> <span class=n>np</span><span class=o>.</span><span class=n>zeros</span><span class=p>((</span><span class=n>imgs</span><span class=o>.</span><span class=n>shape</span><span class=p>[</span><span class=mi>0</span><span class=p>],</span> <span class=n>H</span><span class=p>,</span> <span class=n>W</span><span class=p>,</span> <span class=mi>4</span><span class=p>))</span>
+</span></span><span class=line><span class=cl>        <span class=k>for</span> <span class=n>i</span><span class=p>,</span> <span class=n>img</span> <span class=ow>in</span> <span class=nb>enumerate</span><span class=p>(</span><span class=n>imgs</span><span class=p>):</span>
+</span></span><span class=line><span class=cl>            <span class=n>imgs_half_res</span><span class=p>[</span><span class=n>i</span><span class=p>]</span> <span class=o>=</span> <span class=n>cv2</span><span class=o>.</span><span class=n>resize</span><span class=p>(</span><span class=n>img</span><span class=p>,</span> <span class=p>(</span><span class=n>W</span><span class=p>,</span> <span class=n>H</span><span class=p>),</span> <span class=n>interpolation</span><span class=o>=</span><span class=n>cv2</span><span class=o>.</span><span class=n>INTER_AREA</span><span class=p>)</span>
+</span></span><span class=line><span class=cl>        <span class=n>imgs</span> <span class=o>=</span> <span class=n>imgs_half_res</span>
+</span></span><span class=line><span class=cl>        <span class=c1># imgs = tf.image.resize_area(imgs, [400, 400]).numpy()</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>        
+</span></span><span class=line><span class=cl>    <span class=k>return</span> <span class=n>imgs</span><span class=p>,</span> <span class=n>poses</span><span class=p>,</span> <span class=n>render_poses</span><span class=p>,</span> <span class=p>[</span><span class=n>H</span><span class=p>,</span> <span class=n>W</span><span class=p>,</span> <span class=n>focal</span><span class=p>],</span> <span class=n>i_split</span>
+</span></span></code></pre></td></tr></table></div></div><p>通过对代码的分析，可以得出返回值的含义：</p><ul><li>imgs : 根据 .json 文件加载到的所有图像数据。shape：（N，H，W，4）N 代表用于 train、test、val 的总数量</li><li>poses : 转置矩阵。shape：（N，4，4）</li><li>render_poses : 用于测试的 pose 。shape：（40，4，4）</li><li>i_split : [[0:train], [train:val], [val:test]]</li><li>[H，W，focal]：宽，高，焦距</li></ul><h1 id=模型初始化>模型初始化<a hidden class=anchor aria-hidden=true href=#模型初始化>#</a></h1><p>得到了上一节的数据之后，我们透过 train（）函数的走向，可以发现下一步就是光线生成。</p><p>我们模拟的光线其实就是空间中一组离散的点坐标，通过这组点坐标，我们就能够利用 NeRF 的 MLP 生成对应点的密度和颜色</p><h2 id=train>train<a hidden class=anchor aria-hidden=true href=#train>#</a></h2><p>我们跟随 train（）函数的代码往下推进</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre tabindex=0 class=chroma><code><span class=lnt> 1
+</span><span class=lnt> 2
+</span><span class=lnt> 3
+</span><span class=lnt> 4
+</span><span class=lnt> 5
+</span><span class=lnt> 6
+</span><span class=lnt> 7
+</span><span class=lnt> 8
+</span><span class=lnt> 9
+</span><span class=lnt>10
+</span><span class=lnt>11
+</span><span class=lnt>12
+</span></code></pre></td><td class=lntd><pre tabindex=0 class=chroma><code class=language-python data-lang=python><span class=line><span class=cl><span class=k>def</span> <span class=nf>train</span><span class=p>():</span>
+</span></span><span class=line><span class=cl>        <span class=o>...</span>
+</span></span><span class=line><span class=cl>        <span class=c1># 加载数据</span>
+</span></span><span class=line><span class=cl>        <span class=o>...</span>
+</span></span><span class=line><span class=cl>        
+</span></span><span class=line><span class=cl>    <span class=k>if</span> <span class=n>K</span> <span class=ow>is</span> <span class=kc>None</span><span class=p>:</span>
+</span></span><span class=line><span class=cl>       <span class=n>K</span> <span class=o>=</span> <span class=n>np</span><span class=o>.</span><span class=n>array</span><span class=p>([</span>
+</span></span><span class=line><span class=cl>           <span class=p>[</span><span class=n>focal</span><span class=p>,</span> <span class=mi>0</span><span class=p>,</span> <span class=mf>0.5</span><span class=o>*</span><span class=n>W</span><span class=p>],</span>
+</span></span><span class=line><span class=cl>           <span class=p>[</span><span class=mi>0</span><span class=p>,</span> <span class=n>focal</span><span class=p>,</span> <span class=mf>0.5</span><span class=o>*</span><span class=n>H</span><span class=p>],</span>
+</span></span><span class=line><span class=cl>           <span class=p>[</span><span class=mi>0</span><span class=p>,</span> <span class=mi>0</span><span class=p>,</span> <span class=mi>1</span><span class=p>]</span>
+</span></span><span class=line><span class=cl>       <span class=p>])</span>
+</span></span><span class=line><span class=cl>    <span class=c1>#这个K是相机的内参，作用：focal就是焦距，0.5W，0.5H就是图像的原点</span>
+</span></span></code></pre></td></tr></table></div></div><p>初始化 NeRF 网络：</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre tabindex=0 class=chroma><code><span class=lnt> 1
+</span><span class=lnt> 2
+</span><span class=lnt> 3
+</span><span class=lnt> 4
+</span><span class=lnt> 5
+</span><span class=lnt> 6
+</span><span class=lnt> 7
+</span><span class=lnt> 8
+</span><span class=lnt> 9
+</span><span class=lnt>10
+</span><span class=lnt>11
+</span><span class=lnt>12
+</span><span class=lnt>13
+</span></code></pre></td><td class=lntd><pre tabindex=0 class=chroma><code class=language-python data-lang=python><span class=line><span class=cl><span class=k>def</span> <span class=nf>train</span><span class=p>():</span>
+</span></span><span class=line><span class=cl>        <span class=o>...</span>
+</span></span><span class=line><span class=cl>        <span class=c1># 初始化 NeRF 网络模型</span>
+</span></span><span class=line><span class=cl>        <span class=n>render_kwargs_train</span><span class=p>,</span> <span class=n>render_kwargs_test</span><span class=p>,</span> <span class=n>start</span><span class=p>,</span> <span class=n>grad_vars</span><span class=p>,</span> <span class=n>optimizer</span> <span class=o>=</span> <span class=n>create_nerf</span><span class=p>(</span><span class=n>args</span><span class=p>)</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>        <span class=n>bds_dict</span> <span class=o>=</span> <span class=p>{</span>
+</span></span><span class=line><span class=cl>        <span class=s1>&#39;near&#39;</span> <span class=p>:</span> <span class=n>near</span><span class=p>,</span>
+</span></span><span class=line><span class=cl>        <span class=s1>&#39;far&#39;</span> <span class=p>:</span> <span class=n>far</span><span class=p>,</span>
+</span></span><span class=line><span class=cl>    <span class=p>}</span>
+</span></span><span class=line><span class=cl>    <span class=c1># 更新字典，加入三维空间的边界框 bounding box</span>
+</span></span><span class=line><span class=cl>    <span class=n>render_kwargs_train</span><span class=o>.</span><span class=n>update</span><span class=p>(</span><span class=n>bds_dict</span><span class=p>)</span>
+</span></span><span class=line><span class=cl>    <span class=n>render_kwargs_test</span><span class=o>.</span><span class=n>update</span><span class=p>(</span><span class=n>bds_dict</span><span class=p>)</span>
+</span></span><span class=line><span class=cl>        <span class=o>...</span>
+</span></span></code></pre></td></tr></table></div></div><h3 id=create_nerf>create_nerf<a hidden class=anchor aria-hidden=true href=#create_nerf>#</a></h3><p>初始化主要通过函数 create_nerf（）实现，我们接着进入 create_nerf（）的代码</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre tabindex=0 class=chroma><code><span class=lnt>1
+</span><span class=lnt>2
+</span><span class=lnt>3
+</span></code></pre></td><td class=lntd><pre tabindex=0 class=chroma><code class=language-python data-lang=python><span class=line><span class=cl><span class=k>def</span> <span class=nf>create_nerf</span><span class=p>(</span><span class=n>args</span><span class=p>):</span>
+</span></span><span class=line><span class=cl>    <span class=n>embed_fn</span><span class=p>,</span> <span class=n>input_ch</span> <span class=o>=</span> <span class=n>get_embedder</span><span class=p>(</span><span class=n>args</span><span class=o>.</span><span class=n>multires</span><span class=p>,</span> <span class=n>args</span><span class=o>.</span><span class=n>i_embed</span><span class=p>)</span>  
+</span></span><span class=line><span class=cl>        <span class=o>...</span>
+</span></span></code></pre></td></tr></table></div></div><p>这个 get_embedder 函数对应的就是论文中的位置编码部分，给定返回的编码器 embed_fn 一个输入，就能够获得编码后的结果，公式如下（位置编码公式）：</p><p><img loading=lazy src=static/IxJFbaVJXoysSUxx0AIcAzo1n4b.png alt></p><h4 id=get_embedder>get_embedder<a hidden class=anchor aria-hidden=true href=#get_embedder>#</a></h4><p>该函数的具体实现：</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre tabindex=0 class=chroma><code><span class=lnt> 1
+</span><span class=lnt> 2
+</span><span class=lnt> 3
+</span><span class=lnt> 4
+</span><span class=lnt> 5
+</span><span class=lnt> 6
+</span><span class=lnt> 7
+</span><span class=lnt> 8
+</span><span class=lnt> 9
+</span><span class=lnt>10
+</span><span class=lnt>11
+</span><span class=lnt>12
+</span><span class=lnt>13
+</span><span class=lnt>14
+</span><span class=lnt>15
+</span><span class=lnt>16
+</span><span class=lnt>17
+</span><span class=lnt>18
+</span><span class=lnt>19
+</span><span class=lnt>20
+</span><span class=lnt>21
+</span><span class=lnt>22
+</span><span class=lnt>23
+</span><span class=lnt>24
+</span><span class=lnt>25
+</span><span class=lnt>26
+</span><span class=lnt>27
+</span><span class=lnt>28
+</span><span class=lnt>29
+</span><span class=lnt>30
+</span><span class=lnt>31
+</span><span class=lnt>32
+</span><span class=lnt>33
+</span><span class=lnt>34
+</span><span class=lnt>35
+</span><span class=lnt>36
+</span><span class=lnt>37
+</span><span class=lnt>38
+</span><span class=lnt>39
+</span><span class=lnt>40
+</span><span class=lnt>41
+</span><span class=lnt>42
+</span><span class=lnt>43
+</span><span class=lnt>44
+</span><span class=lnt>45
+</span><span class=lnt>46
+</span><span class=lnt>47
+</span><span class=lnt>48
+</span><span class=lnt>49
+</span><span class=lnt>50
+</span><span class=lnt>51
+</span><span class=lnt>52
+</span></code></pre></td><td class=lntd><pre tabindex=0 class=chroma><code class=language-python data-lang=python><span class=line><span class=cl><span class=k>def</span> <span class=nf>get_embedder</span><span class=p>(</span><span class=n>multires</span><span class=p>,</span> <span class=n>i</span><span class=o>=</span><span class=mi>0</span><span class=p>):</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>    <span class=k>if</span> <span class=n>i</span> <span class=o>==</span> <span class=o>-</span><span class=mi>1</span><span class=p>:</span>
+</span></span><span class=line><span class=cl>        <span class=k>return</span> <span class=n>nn</span><span class=o>.</span><span class=n>Identity</span><span class=p>(),</span> <span class=mi>3</span> <span class=c1>#原封不动返回，不进行编码</span>
+</span></span><span class=line><span class=cl>    
+</span></span><span class=line><span class=cl>    <span class=n>embed_kwargs</span> <span class=o>=</span> <span class=p>{</span>
+</span></span><span class=line><span class=cl>                <span class=s1>&#39;include_input&#39;</span> <span class=p>:</span> <span class=kc>True</span><span class=p>,</span>  <span class=c1># &lt;u&gt;如果为真，最终的编码结果包含原始坐标&lt;/u&gt;</span>
+</span></span><span class=line><span class=cl>                <span class=s1>&#39;input_dims&#39;</span> <span class=p>:</span> <span class=mi>3</span><span class=p>,</span>  <span class=c1># 输入给编码器的数据的维度</span>
+</span></span><span class=line><span class=cl>                <span class=s1>&#39;max_freq_log2&#39;</span> <span class=p>:</span> <span class=n>multires</span><span class=o>-</span><span class=mi>1</span><span class=p>,</span>
+</span></span><span class=line><span class=cl>                <span class=s1>&#39;num_freqs&#39;</span> <span class=p>:</span> <span class=n>multires</span><span class=p>,</span>  <span class=c1># 即论文中 5.1 节位置编码公式中的 L </span>
+</span></span><span class=line><span class=cl>                <span class=s1>&#39;log_sampling&#39;</span> <span class=p>:</span> <span class=kc>True</span><span class=p>,</span>
+</span></span><span class=line><span class=cl>                <span class=s1>&#39;periodic_fns&#39;</span> <span class=p>:</span> <span class=p>[</span><span class=n>torch</span><span class=o>.</span><span class=n>sin</span><span class=p>,</span> <span class=n>torch</span><span class=o>.</span><span class=n>cos</span><span class=p>],</span>
+</span></span><span class=line><span class=cl>    <span class=p>}</span>
+</span></span><span class=line><span class=cl>    
+</span></span><span class=line><span class=cl>    <span class=n>embedder_obj</span> <span class=o>=</span> <span class=n>Embedder</span><span class=p>(</span><span class=o>**</span><span class=n>embed_kwargs</span><span class=p>)</span>
+</span></span><span class=line><span class=cl>    <span class=n>embed</span> <span class=o>=</span> <span class=k>lambda</span> <span class=n>x</span><span class=p>,</span> <span class=n>eo</span><span class=o>=</span><span class=n>embedder_obj</span> <span class=p>:</span> <span class=n>eo</span><span class=o>.</span><span class=n>embed</span><span class=p>(</span><span class=n>x</span><span class=p>)</span>  <span class=c1># embed 现在相当于一个编码器，具体的编码公式与论文中的一致。</span>
+</span></span><span class=line><span class=cl>    <span class=k>return</span> <span class=n>embed</span><span class=p>,</span> <span class=n>embedder_obj</span><span class=o>.</span><span class=n>out_dim</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl><span class=k>class</span> <span class=nc>Embedder</span><span class=p>:</span>
+</span></span><span class=line><span class=cl>    <span class=k>def</span> <span class=fm>__init__</span><span class=p>(</span><span class=bp>self</span><span class=p>,</span> <span class=o>**</span><span class=n>kwargs</span><span class=p>):</span>
+</span></span><span class=line><span class=cl>        <span class=bp>self</span><span class=o>.</span><span class=n>kwargs</span> <span class=o>=</span> <span class=n>kwargs</span>
+</span></span><span class=line><span class=cl>        <span class=bp>self</span><span class=o>.</span><span class=n>create_embedding_fn</span><span class=p>()</span>
+</span></span><span class=line><span class=cl>        
+</span></span><span class=line><span class=cl>    <span class=k>def</span> <span class=nf>create_embedding_fn</span><span class=p>(</span><span class=bp>self</span><span class=p>):</span>
+</span></span><span class=line><span class=cl>        <span class=n>embed_fns</span> <span class=o>=</span> <span class=p>[]</span>
+</span></span><span class=line><span class=cl>        <span class=n>d</span> <span class=o>=</span> <span class=bp>self</span><span class=o>.</span><span class=n>kwargs</span><span class=p>[</span><span class=s1>&#39;input_dims&#39;</span><span class=p>]</span>
+</span></span><span class=line><span class=cl>        <span class=n>out_dim</span> <span class=o>=</span> <span class=mi>0</span>
+</span></span><span class=line><span class=cl>        
+</span></span><span class=line><span class=cl>        <span class=c1># 如果包含原始位置</span>
+</span></span><span class=line><span class=cl>        <span class=k>if</span> <span class=bp>self</span><span class=o>.</span><span class=n>kwargs</span><span class=p>[</span><span class=s1>&#39;include_input&#39;</span><span class=p>]:</span>
+</span></span><span class=line><span class=cl>            <span class=n>embed_fns</span><span class=o>.</span><span class=n>append</span><span class=p>(</span><span class=k>lambda</span> <span class=n>x</span> <span class=p>:</span> <span class=n>x</span><span class=p>)</span>  <span class=c1># 把一个不对数据做出改变的匿名函数添加到列表中</span>
+</span></span><span class=line><span class=cl>            <span class=n>out_dim</span> <span class=o>+=</span> <span class=n>d</span>
+</span></span><span class=line><span class=cl>            
+</span></span><span class=line><span class=cl>        <span class=n>max_freq</span> <span class=o>=</span> <span class=bp>self</span><span class=o>.</span><span class=n>kwargs</span><span class=p>[</span><span class=s1>&#39;max_freq_log2&#39;</span><span class=p>]</span>
+</span></span><span class=line><span class=cl>        <span class=n>N_freqs</span> <span class=o>=</span> <span class=bp>self</span><span class=o>.</span><span class=n>kwargs</span><span class=p>[</span><span class=s1>&#39;num_freqs&#39;</span><span class=p>]</span>
+</span></span><span class=line><span class=cl>        
+</span></span><span class=line><span class=cl>        <span class=k>if</span> <span class=bp>self</span><span class=o>.</span><span class=n>kwargs</span><span class=p>[</span><span class=s1>&#39;log_sampling&#39;</span><span class=p>]:</span>
+</span></span><span class=line><span class=cl>            <span class=n>freq_bands</span> <span class=o>=</span> <span class=mf>2.</span><span class=o>**</span><span class=n>torch</span><span class=o>.</span><span class=n>linspace</span><span class=p>(</span><span class=mf>0.</span><span class=p>,</span> <span class=n>max_freq</span><span class=p>,</span> <span class=n>steps</span><span class=o>=</span><span class=n>N_freqs</span><span class=p>)</span>  <span class=c1># 得到 [2^0, 2^1, ... ,2^(L-1)] 参考论文 5.1 中的公式</span>
+</span></span><span class=line><span class=cl>        <span class=k>else</span><span class=p>:</span>
+</span></span><span class=line><span class=cl>            <span class=n>freq_bands</span> <span class=o>=</span> <span class=n>torch</span><span class=o>.</span><span class=n>linspace</span><span class=p>(</span><span class=mf>2.</span><span class=o>**</span><span class=mf>0.</span><span class=p>,</span> <span class=mf>2.</span><span class=o>**</span><span class=n>max_freq</span><span class=p>,</span> <span class=n>steps</span><span class=o>=</span><span class=n>N_freqs</span><span class=p>)</span>  <span class=c1># 得到 [2^0, 2^(L-1)] 的等差数列，列表中有 L 个元素</span>
+</span></span><span class=line><span class=cl>            
+</span></span><span class=line><span class=cl>        <span class=k>for</span> <span class=n>freq</span> <span class=ow>in</span> <span class=n>freq_bands</span><span class=p>:</span>
+</span></span><span class=line><span class=cl>            <span class=k>for</span> <span class=n>p_fn</span> <span class=ow>in</span> <span class=bp>self</span><span class=o>.</span><span class=n>kwargs</span><span class=p>[</span><span class=s1>&#39;periodic_fns&#39;</span><span class=p>]:</span>
+</span></span><span class=line><span class=cl>                <span class=n>embed_fns</span><span class=o>.</span><span class=n>append</span><span class=p>(</span><span class=k>lambda</span> <span class=n>x</span><span class=p>,</span> <span class=n>p_fn</span><span class=o>=</span><span class=n>p_fn</span><span class=p>,</span> <span class=n>freq</span><span class=o>=</span><span class=n>freq</span> <span class=p>:</span> <span class=n>p_fn</span><span class=p>(</span><span class=n>x</span> <span class=o>*</span> <span class=n>freq</span><span class=p>))</span>  <span class=c1># sin(x * 2^n)  参考位置编码公式</span>
+</span></span><span class=line><span class=cl>                <span class=n>out_dim</span> <span class=o>+=</span> <span class=n>d</span>  <span class=c1># 每使用子编码公式一次就要把输出维度加 3，因为每个待编码的位置维度是 3</span>
+</span></span><span class=line><span class=cl>                    
+</span></span><span class=line><span class=cl>        <span class=bp>self</span><span class=o>.</span><span class=n>embed_fns</span> <span class=o>=</span> <span class=n>embed_fns</span>  <span class=c1># 相当于是一个编码公式列表</span>
+</span></span><span class=line><span class=cl>        <span class=bp>self</span><span class=o>.</span><span class=n>out_dim</span> <span class=o>=</span> <span class=n>out_dim</span>
+</span></span><span class=line><span class=cl>        
+</span></span><span class=line><span class=cl>    <span class=k>def</span> <span class=nf>embed</span><span class=p>(</span><span class=bp>self</span><span class=p>,</span> <span class=n>inputs</span><span class=p>):</span>
+</span></span><span class=line><span class=cl>    <span class=c1># 对各个输入进行编码，给定一个输入，使用编码列表中的公式分别对他编码</span>
+</span></span><span class=line><span class=cl>        <span class=k>return</span> <span class=n>torch</span><span class=o>.</span><span class=n>cat</span><span class=p>([</span><span class=n>fn</span><span class=p>(</span><span class=n>inputs</span><span class=p>)</span> <span class=k>for</span> <span class=n>fn</span> <span class=ow>in</span> <span class=bp>self</span><span class=o>.</span><span class=n>embed_fns</span><span class=p>],</span> <span class=o>-</span><span class=mi>1</span><span class=p>)</span>
+</span></span></code></pre></td></tr></table></div></div><h4 id=初始化网络结构>初始化网络结构<a hidden class=anchor aria-hidden=true href=#初始化网络结构>#</a></h4><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre tabindex=0 class=chroma><code><span class=lnt> 1
+</span><span class=lnt> 2
+</span><span class=lnt> 3
+</span><span class=lnt> 4
+</span><span class=lnt> 5
+</span><span class=lnt> 6
+</span><span class=lnt> 7
+</span><span class=lnt> 8
+</span><span class=lnt> 9
+</span><span class=lnt>10
+</span><span class=lnt>11
+</span><span class=lnt>12
+</span><span class=lnt>13
+</span><span class=lnt>14
+</span></code></pre></td><td class=lntd><pre tabindex=0 class=chroma><code class=language-python data-lang=python><span class=line><span class=cl><span class=k>def</span> <span class=nf>create_nerf</span><span class=p>(</span><span class=n>args</span><span class=p>):</span>
+</span></span><span class=line><span class=cl>        <span class=o>...</span>
+</span></span><span class=line><span class=cl>        <span class=c1># 初始化MLP模型参数，网络的层级模型详见论文 补充材料 pic 7</span>
+</span></span><span class=line><span class=cl>    <span class=n>model</span> <span class=o>=</span> <span class=n>NeRF</span><span class=p>(</span><span class=n>D</span><span class=o>=</span><span class=n>args</span><span class=o>.</span><span class=n>netdepth</span><span class=p>,</span> <span class=n>W</span><span class=o>=</span><span class=n>args</span><span class=o>.</span><span class=n>netwidth</span><span class=p>,</span> <span class=c1>#网络的宽度和深度都是可以从超参数中定义的</span>
+</span></span><span class=line><span class=cl>                 <span class=n>input_ch</span><span class=o>=</span><span class=n>input_ch</span><span class=p>,</span> <span class=n>output_ch</span><span class=o>=</span><span class=n>output_ch</span><span class=p>,</span> <span class=n>skips</span><span class=o>=</span><span class=n>skips</span><span class=p>,</span>
+</span></span><span class=line><span class=cl>                 <span class=n>input_ch_views</span><span class=o>=</span><span class=n>input_ch_views</span><span class=p>,</span> <span class=n>use_viewdirs</span><span class=o>=</span><span class=n>args</span><span class=o>.</span><span class=n>use_viewdirs</span><span class=p>)</span><span class=o>.</span><span class=n>to</span><span class=p>(</span><span class=n>device</span><span class=p>)</span>
+</span></span><span class=line><span class=cl>    <span class=c1># 模型中的梯度变量</span>
+</span></span><span class=line><span class=cl>    <span class=n>grad_vars</span> <span class=o>=</span> <span class=nb>list</span><span class=p>(</span><span class=n>model</span><span class=o>.</span><span class=n>parameters</span><span class=p>())</span>
+</span></span><span class=line><span class=cl>    <span class=o>...</span>
+</span></span><span class=line><span class=cl>    <span class=c1># 定义一个查询点的颜色和密度的匿名函数，实际上给定点坐标，方向，以及查询网络，我们就可以得到该点在该网络下的输出（[rgb,alpha]）</span>
+</span></span><span class=line><span class=cl>    <span class=n>network_query_fn</span> <span class=o>=</span> <span class=k>lambda</span> <span class=n>inputs</span><span class=p>,</span> <span class=n>viewdirs</span><span class=p>,</span> <span class=n>network_fn</span> <span class=p>:</span> <span class=n>run_network</span><span class=p>(</span><span class=n>inputs</span><span class=p>,</span> <span class=n>viewdirs</span><span class=p>,</span> <span class=n>network_fn</span><span class=p>,</span>
+</span></span><span class=line><span class=cl>                                                                <span class=n>embed_fn</span><span class=o>=</span><span class=n>embed_fn</span><span class=p>,</span>
+</span></span><span class=line><span class=cl>                                                                <span class=n>embeddirs_fn</span><span class=o>=</span><span class=n>embeddirs_fn</span><span class=p>,</span>
+</span></span><span class=line><span class=cl>                                                                <span class=n>netchunk</span><span class=o>=</span><span class=n>args</span><span class=o>.</span><span class=n>netchunk</span>  <span class=c1># 网络批处理查询点的数量)</span>
+</span></span></code></pre></td></tr></table></div></div><p>这里就来到了我们的第一个 MLP 映射：通过 5D 输入获得颜色和密度的映射</p><p><img loading=lazy src=static/VYM3b8REmo5TDlx9HiVckAtbnof.png alt></p><p>在代码中为 run_network()函数，这是一个匿名函数，network_fn 变量就是我们的 model 变量，接下来我们分析 run_network()函数</p><h5 id=run_network>run_network<a hidden class=anchor aria-hidden=true href=#run_network>#</a></h5><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre tabindex=0 class=chroma><code><span class=lnt> 1
+</span><span class=lnt> 2
+</span><span class=lnt> 3
+</span><span class=lnt> 4
+</span><span class=lnt> 5
+</span><span class=lnt> 6
+</span><span class=lnt> 7
+</span><span class=lnt> 8
+</span><span class=lnt> 9
+</span><span class=lnt>10
+</span><span class=lnt>11
+</span><span class=lnt>12
+</span><span class=lnt>13
+</span><span class=lnt>14
+</span><span class=lnt>15
+</span><span class=lnt>16
+</span><span class=lnt>17
+</span></code></pre></td><td class=lntd><pre tabindex=0 class=chroma><code class=language-python data-lang=python><span class=line><span class=cl><span class=k>def</span> <span class=nf>run_network</span><span class=p>(</span><span class=n>inputs</span><span class=p>,</span> <span class=n>viewdirs</span><span class=p>,</span> <span class=n>fn</span><span class=p>,</span> <span class=n>embed_fn</span><span class=p>,</span> <span class=n>embeddirs_fn</span><span class=p>,</span> <span class=n>netchunk</span><span class=o>=</span><span class=mi>1024</span><span class=o>*</span><span class=mi>64</span><span class=p>):</span>
+</span></span><span class=line><span class=cl>    <span class=s2>&#34;&#34;&#34;
+</span></span></span><span class=line><span class=cl><span class=s2>    对 input 进行处理，应用 神经网络 fn
+</span></span></span><span class=line><span class=cl><span class=s2>    &#34;&#34;&#34;</span>
+</span></span><span class=line><span class=cl>    <span class=n>inputs_flat</span> <span class=o>=</span> <span class=n>torch</span><span class=o>.</span><span class=n>reshape</span><span class=p>(</span><span class=n>inputs</span><span class=p>,</span> <span class=p>[</span><span class=o>-</span><span class=mi>1</span><span class=p>,</span> <span class=n>inputs</span><span class=o>.</span><span class=n>shape</span><span class=p>[</span><span class=o>-</span><span class=mi>1</span><span class=p>]])</span>
+</span></span><span class=line><span class=cl>        <span class=n>embedded</span> <span class=o>=</span> <span class=n>embed_fn</span><span class=p>(</span><span class=n>inputs_flat</span><span class=p>)</span>  <span class=c1># 对输入进行位置编码，得到编码后的结果，是一个 array 数组</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>        <span class=k>if</span> <span class=n>viewdirs</span> <span class=ow>is</span> <span class=ow>not</span> <span class=kc>None</span><span class=p>:</span>
+</span></span><span class=line><span class=cl>                <span class=c1># 视图不为 None，即输入了视图方向，那么我们就应该考虑对视图方向作出处理，用以生成颜色</span>
+</span></span><span class=line><span class=cl>                <span class=n>input_dirs</span> <span class=o>=</span> <span class=n>viewdirs</span><span class=p>[:,</span> <span class=kc>None</span><span class=p>]</span><span class=o>.</span><span class=n>expand</span><span class=p>(</span><span class=n>inputs</span><span class=o>.</span><span class=n>shape</span><span class=p>)</span>
+</span></span><span class=line><span class=cl>                <span class=n>input_dirs_flat</span> <span class=o>=</span> <span class=n>torch</span><span class=o>.</span><span class=n>reshape</span><span class=p>(</span><span class=n>input_dirs</span><span class=p>,</span> <span class=p>[</span><span class=o>-</span><span class=mi>1</span><span class=p>,</span> <span class=n>input_dirs</span><span class=o>.</span><span class=n>shape</span><span class=p>[</span><span class=o>-</span><span class=mi>1</span><span class=p>]])</span>
+</span></span><span class=line><span class=cl>                <span class=n>embedded_dirs</span> <span class=o>=</span> <span class=n>embeddirs_fn</span><span class=p>(</span><span class=n>input_dirs_flat</span><span class=p>)</span>  <span class=c1># 对输入方向进行编码</span>
+</span></span><span class=line><span class=cl>                <span class=n>embedded</span> <span class=o>=</span> <span class=n>torch</span><span class=o>.</span><span class=n>cat</span><span class=p>([</span><span class=n>embedded</span><span class=p>,</span> <span class=n>embedded_dirs</span><span class=p>],</span> <span class=o>-</span><span class=mi>1</span><span class=p>)</span>  <span class=c1># 将编码后的位置和方向聚合到一起</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>        <span class=n>outputs_flat</span> <span class=o>=</span> <span class=n>batchify</span><span class=p>(</span><span class=n>fn</span><span class=p>,</span> <span class=n>netchunk</span><span class=p>)(</span><span class=n>embedded</span><span class=p>)</span>  <span class=c1># 将编码过的点以批处理的形式输入到 网络模型 中得到 输出（RGB,A）</span>
+</span></span><span class=line><span class=cl>        <span class=n>outputs</span> <span class=o>=</span> <span class=n>torch</span><span class=o>.</span><span class=n>reshape</span><span class=p>(</span><span class=n>outputs_flat</span><span class=p>,</span> <span class=nb>list</span><span class=p>(</span><span class=n>inputs</span><span class=o>.</span><span class=n>shape</span><span class=p>[:</span><span class=o>-</span><span class=mi>1</span><span class=p>])</span> <span class=o>+</span> <span class=p>[</span><span class=n>outputs_flat</span><span class=o>.</span><span class=n>shape</span><span class=p>[</span><span class=o>-</span><span class=mi>1</span><span class=p>]])</span>
+</span></span><span class=line><span class=cl>        <span class=k>return</span> <span class=n>outputs</span>
+</span></span></code></pre></td></tr></table></div></div><p>这里就是一个将输入的数据编码然后输入到 network 中的，不过为什么我们需要专门定义一个匿名函数来实现这样一个过程了，除了代码的美观性，我认为和 NeRF 原文中的 coarse to fine 有关，我们需要定义两个网络模型，所以输入的网络也是不同的。</p><h4 id=初始化完成>初始化完成<a hidden class=anchor aria-hidden=true href=#初始化完成>#</a></h4><p>我们接着来到 create_nerf（）函数中</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre tabindex=0 class=chroma><code><span class=lnt> 1
+</span><span class=lnt> 2
+</span><span class=lnt> 3
+</span><span class=lnt> 4
+</span><span class=lnt> 5
+</span><span class=lnt> 6
+</span><span class=lnt> 7
+</span><span class=lnt> 8
+</span><span class=lnt> 9
+</span><span class=lnt>10
+</span><span class=lnt>11
+</span><span class=lnt>12
+</span><span class=lnt>13
+</span><span class=lnt>14
+</span><span class=lnt>15
+</span><span class=lnt>16
+</span><span class=lnt>17
+</span><span class=lnt>18
+</span><span class=lnt>19
+</span><span class=lnt>20
+</span><span class=lnt>21
+</span><span class=lnt>22
+</span><span class=lnt>23
+</span><span class=lnt>24
+</span><span class=lnt>25
+</span><span class=lnt>26
+</span><span class=lnt>27
+</span><span class=lnt>28
+</span><span class=lnt>29
+</span><span class=lnt>30
+</span><span class=lnt>31
+</span><span class=lnt>32
+</span><span class=lnt>33
+</span><span class=lnt>34
+</span></code></pre></td><td class=lntd><pre tabindex=0 class=chroma><code class=language-python data-lang=python><span class=line><span class=cl><span class=k>def</span> <span class=nf>create_nerf</span><span class=p>(</span><span class=n>args</span><span class=p>):</span>
+</span></span><span class=line><span class=cl>        <span class=o>...</span>
+</span></span><span class=line><span class=cl>        <span class=c1># 创建网络的优化器</span>
+</span></span><span class=line><span class=cl>    <span class=n>optimizer</span> <span class=o>=</span> <span class=n>torch</span><span class=o>.</span><span class=n>optim</span><span class=o>.</span><span class=n>Adam</span><span class=p>(</span><span class=n>params</span><span class=o>=</span><span class=n>grad_vars</span><span class=p>,</span> <span class=n>lr</span><span class=o>=</span><span class=n>args</span><span class=o>.</span><span class=n>lrate</span><span class=p>,</span> <span class=n>betas</span><span class=o>=</span><span class=p>(</span><span class=mf>0.9</span><span class=p>,</span> <span class=mf>0.999</span><span class=p>))</span>
+</span></span><span class=line><span class=cl>        
+</span></span><span class=line><span class=cl>        <span class=o>...</span>
+</span></span><span class=line><span class=cl>        <span class=c1># 关于加载已有模型的部分我们不在逐行分析，对整体算法的分析没有任何影响</span>
+</span></span><span class=line><span class=cl>        <span class=c1># 此处忽略了精细网络的加载过程</span>
+</span></span><span class=line><span class=cl>        <span class=o>...</span>
+</span></span><span class=line><span class=cl>        
+</span></span><span class=line><span class=cl>        <span class=c1># 注意看，现在整体的初始化已经完成，我们需要对返回值进行一些处理</span>
+</span></span><span class=line><span class=cl>        <span class=n>render_kwargs_train</span> <span class=o>=</span> <span class=p>{</span>
+</span></span><span class=line><span class=cl>        <span class=s1>&#39;network_query_fn&#39;</span> <span class=p>:</span> <span class=n>network_query_fn</span><span class=p>,</span>
+</span></span><span class=line><span class=cl>        <span class=s1>&#39;perturb&#39;</span> <span class=p>:</span> <span class=n>args</span><span class=o>.</span><span class=n>perturb</span><span class=p>,</span>
+</span></span><span class=line><span class=cl>        <span class=s1>&#39;N_importance&#39;</span> <span class=p>:</span> <span class=n>args</span><span class=o>.</span><span class=n>N_importance</span><span class=p>,</span>
+</span></span><span class=line><span class=cl>        <span class=s1>&#39;network_fine&#39;</span> <span class=p>:</span> <span class=n>model_fine</span><span class=p>,</span>
+</span></span><span class=line><span class=cl>        <span class=s1>&#39;N_samples&#39;</span> <span class=p>:</span> <span class=n>args</span><span class=o>.</span><span class=n>N_samples</span><span class=p>,</span>
+</span></span><span class=line><span class=cl>        <span class=s1>&#39;network_fn&#39;</span> <span class=p>:</span> <span class=n>model</span><span class=p>,</span>
+</span></span><span class=line><span class=cl>        <span class=s1>&#39;use_viewdirs&#39;</span> <span class=p>:</span> <span class=n>args</span><span class=o>.</span><span class=n>use_viewdirs</span><span class=p>,</span>
+</span></span><span class=line><span class=cl>        <span class=s1>&#39;white_bkgd&#39;</span> <span class=p>:</span> <span class=n>args</span><span class=o>.</span><span class=n>white_bkgd</span><span class=p>,</span>
+</span></span><span class=line><span class=cl>        <span class=s1>&#39;raw_noise_std&#39;</span> <span class=p>:</span> <span class=n>args</span><span class=o>.</span><span class=n>raw_noise_std</span><span class=p>,</span>
+</span></span><span class=line><span class=cl>    <span class=p>}</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>    <span class=c1># NDC 空间，只对前向场景有效，具体解释可以看论文，这里不再展开</span>
+</span></span><span class=line><span class=cl>    <span class=k>if</span> <span class=n>args</span><span class=o>.</span><span class=n>dataset_type</span> <span class=o>!=</span> <span class=s1>&#39;llff&#39;</span> <span class=ow>or</span> <span class=n>args</span><span class=o>.</span><span class=n>no_ndc</span><span class=p>:</span>
+</span></span><span class=line><span class=cl>        <span class=nb>print</span><span class=p>(</span><span class=s1>&#39;Not ndc!&#39;</span><span class=p>)</span>
+</span></span><span class=line><span class=cl>        <span class=n>render_kwargs_train</span><span class=p>[</span><span class=s1>&#39;ndc&#39;</span><span class=p>]</span> <span class=o>=</span> <span class=kc>False</span>
+</span></span><span class=line><span class=cl>        <span class=n>render_kwargs_train</span><span class=p>[</span><span class=s1>&#39;lindisp&#39;</span><span class=p>]</span> <span class=o>=</span> <span class=n>args</span><span class=o>.</span><span class=n>lindisp</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>    <span class=n>render_kwargs_test</span> <span class=o>=</span> <span class=p>{</span><span class=n>k</span> <span class=p>:</span> <span class=n>render_kwargs_train</span><span class=p>[</span><span class=n>k</span><span class=p>]</span> <span class=k>for</span> <span class=n>k</span> <span class=ow>in</span> <span class=n>render_kwargs_train</span><span class=p>}</span>
+</span></span><span class=line><span class=cl>    <span class=n>render_kwargs_test</span><span class=p>[</span><span class=s1>&#39;perturb&#39;</span><span class=p>]</span> <span class=o>=</span> <span class=kc>False</span>
+</span></span><span class=line><span class=cl>    <span class=n>render_kwargs_test</span><span class=p>[</span><span class=s1>&#39;raw_noise_std&#39;</span><span class=p>]</span> <span class=o>=</span> <span class=mf>0.</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>    <span class=k>return</span> <span class=n>render_kwargs_train</span><span class=p>,</span> <span class=n>render_kwargs_test</span><span class=p>,</span> <span class=n>start</span><span class=p>,</span> <span class=n>grad_vars</span><span class=p>,</span> <span class=n>optimizer</span>
+</span></span></code></pre></td></tr></table></div></div><p>对 render_kwargs_train 进行分析：</p><ul><li><p>&rsquo;network_query_fn&rsquo; : network_query_fn</p><ul><li>上文已经解释过了，这是一个匿名函数，</li><li>给这个函数输入位置坐标，方向坐标，以及神经网络，就可以利用神经网络返回该点对应的 颜色和密度</li></ul></li><li><p>&lsquo;perturb&rsquo; : args.perturb</p><ul><li>扰动，对整体算法理解没有影响</li></ul></li><li><p>&lsquo;N_importance&rsquo; : args.N_importance</p><ul><li>每条光线上细采样点的数量</li></ul></li><li><p>&rsquo;network_fine&rsquo; : model_fine</p><ul><li>论文中的 精细网络</li></ul></li><li><p>&lsquo;N_samples&rsquo; : args.N_samples</p><ul><li>每条光线上粗采样点的数量</li></ul></li><li><p>&rsquo;network_fn&rsquo; : model</p><ul><li>论文中的 粗网络</li></ul></li><li><p>&lsquo;use_viewdirs&rsquo; : args.use_viewdirs</p><ul><li>是否使用视点方向，影响到神经网络是否输出颜色</li></ul></li><li><p>&lsquo;white_bkgd&rsquo; : args.white_bkgd</p><ul><li>如果为 True 将输入的 png 图像的透明部分转换成白色</li></ul></li><li><p>&lsquo;raw_noise_std&rsquo; : args.raw_noise_std</p><ul><li>归一化密度</li></ul></li></ul><p><strong>在齐次裁剪空间的基础上进行透视除法（perspective division)或称齐次除法（homogeneous division),得到的坐标叫做 NDC 空间坐标。</strong></p><p>标准化设备坐标(Normalized Device Coordinates, NDC)</p><h1 id=光线生成>光线生成<a hidden class=anchor aria-hidden=true href=#光线生成>#</a></h1><p>经过前面读入数据和模型初始化之后，我们开始设置光线的操作，解读到现在，我们的基本流程如下所示：</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre tabindex=0 class=chroma><code><span class=lnt> 1
+</span><span class=lnt> 2
+</span><span class=lnt> 3
+</span><span class=lnt> 4
+</span><span class=lnt> 5
+</span><span class=lnt> 6
+</span><span class=lnt> 7
+</span><span class=lnt> 8
+</span><span class=lnt> 9
+</span><span class=lnt>10
+</span><span class=lnt>11
+</span><span class=lnt>12
+</span></code></pre></td><td class=lntd><pre tabindex=0 class=chroma><code class=language-python data-lang=python><span class=line><span class=cl><span class=k>def</span> <span class=nf>train</span><span class=p>():</span>
+</span></span><span class=line><span class=cl>        
+</span></span><span class=line><span class=cl>        <span class=c1># 1、加载数据</span>
+</span></span><span class=line><span class=cl>        <span class=k>if</span> <span class=n>args</span><span class=o>.</span><span class=n>dataset_type</span> <span class=o>==</span> <span class=s1>&#39;llff&#39;</span><span class=p>:</span>
+</span></span><span class=line><span class=cl>        <span class=k>elif</span> <span class=o>...</span>
+</span></span><span class=line><span class=cl>        <span class=o>...</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>        <span class=c1># 2、初始化网络模型</span>
+</span></span><span class=line><span class=cl>        <span class=n>render_kwargs_train</span><span class=p>,</span> <span class=n>render_kwargs_test</span><span class=p>,</span> <span class=n>start</span><span class=p>,</span> <span class=n>grad_vars</span><span class=p>,</span> <span class=n>optimizer</span> <span class=o>=</span> <span class=n>create_nerf</span><span class=p>(</span><span class=n>args</span><span class=p>)</span>
+</span></span><span class=line><span class=cl>        <span class=o>...</span>
+</span></span><span class=line><span class=cl>        
+</span></span><span class=line><span class=cl>        <span class=k>if</span> <span class=n>args</span><span class=o>.</span><span class=n>render_only</span><span class=p>:</span> <span class=o>...</span>
+</span></span></code></pre></td></tr></table></div></div><p>这里的 arg.render_only: 当我们设置为 True 时，网络就不再进行训练，而是使用训练好了的模型进行渲染，直接得到渲染结果。</p><p>下面开始光线生成的代码内容：</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre tabindex=0 class=chroma><code><span class=lnt> 1
+</span><span class=lnt> 2
+</span><span class=lnt> 3
+</span><span class=lnt> 4
+</span><span class=lnt> 5
+</span><span class=lnt> 6
+</span><span class=lnt> 7
+</span><span class=lnt> 8
+</span><span class=lnt> 9
+</span><span class=lnt>10
+</span><span class=lnt>11
+</span><span class=lnt>12
+</span><span class=lnt>13
+</span><span class=lnt>14
+</span><span class=lnt>15
+</span><span class=lnt>16
+</span><span class=lnt>17
+</span><span class=lnt>18
+</span><span class=lnt>19
+</span><span class=lnt>20
+</span><span class=lnt>21
+</span><span class=lnt>22
+</span></code></pre></td><td class=lntd><pre tabindex=0 class=chroma><code class=language-python data-lang=python><span class=line><span class=cl><span class=k>def</span> <span class=nf>train</span><span class=p>():</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>        <span class=o>...</span>
+</span></span><span class=line><span class=cl>        
+</span></span><span class=line><span class=cl>        <span class=c1># 开始读取光线以及光线对应的像素值</span>
+</span></span><span class=line><span class=cl>        <span class=n>N_rand</span> <span class=o>=</span> <span class=n>args</span><span class=o>.</span><span class=n>N_rand</span>
+</span></span><span class=line><span class=cl>        <span class=c1># 是否以批处理的形式生成光线</span>
+</span></span><span class=line><span class=cl>    <span class=n>use_batching</span> <span class=o>=</span> <span class=ow>not</span> <span class=n>args</span><span class=o>.</span><span class=n>no_batching</span>
+</span></span><span class=line><span class=cl>    <span class=k>if</span> <span class=n>use_batching</span><span class=p>:</span>
+</span></span><span class=line><span class=cl>        <span class=nb>print</span><span class=p>(</span><span class=s1>&#39;get rays&#39;</span><span class=p>)</span>
+</span></span><span class=line><span class=cl>        <span class=n>rays</span> <span class=o>=</span> <span class=n>np</span><span class=o>.</span><span class=n>stack</span><span class=p>([</span><span class=n>get_rays_np</span><span class=p>(</span><span class=n>H</span><span class=p>,</span> <span class=n>W</span><span class=p>,</span> <span class=n>K</span><span class=p>,</span> <span class=n>p</span><span class=p>)</span> <span class=k>for</span> <span class=n>p</span> <span class=ow>in</span> <span class=n>poses</span><span class=p>[:,:</span><span class=mi>3</span><span class=p>,:</span><span class=mi>4</span><span class=p>]],</span> <span class=mi>0</span><span class=p>)</span> <span class=c1># [N, ro+rd, H, W, 3]</span>
+</span></span><span class=line><span class=cl>        <span class=nb>print</span><span class=p>(</span><span class=s1>&#39;done, concats&#39;</span><span class=p>)</span>
+</span></span><span class=line><span class=cl>        <span class=n>rays_rgb</span> <span class=o>=</span> <span class=n>np</span><span class=o>.</span><span class=n>concatenate</span><span class=p>([</span><span class=n>rays</span><span class=p>,</span> <span class=n>images</span><span class=p>[:,</span> <span class=kc>None</span><span class=p>]],</span> <span class=mi>1</span><span class=p>)</span>  <span class=c1># [N, ro+rd+rgb, H, W, 3]  这里把光线的原点、方向、以及这条光线对应的像素颜色结合到一起，便于后面的 shuffle 操作</span>
+</span></span><span class=line><span class=cl>        <span class=n>rays_rgb</span> <span class=o>=</span> <span class=n>np</span><span class=o>.</span><span class=n>transpose</span><span class=p>(</span><span class=n>rays_rgb</span><span class=p>,</span> <span class=p>[</span><span class=mi>0</span><span class=p>,</span><span class=mi>2</span><span class=p>,</span><span class=mi>3</span><span class=p>,</span><span class=mi>1</span><span class=p>,</span><span class=mi>4</span><span class=p>])</span>  <span class=c1># [N, H, W, ro+rd+rgb, 3]</span>
+</span></span><span class=line><span class=cl>        <span class=n>rays_rgb</span> <span class=o>=</span> <span class=n>np</span><span class=o>.</span><span class=n>stack</span><span class=p>([</span><span class=n>rays_rgb</span><span class=p>[</span><span class=n>i</span><span class=p>]</span> <span class=k>for</span> <span class=n>i</span> <span class=ow>in</span> <span class=n>i_train</span><span class=p>],</span> <span class=mi>0</span><span class=p>)</span>  <span class=c1># train images only</span>
+</span></span><span class=line><span class=cl>        <span class=n>rays_rgb</span> <span class=o>=</span> <span class=n>np</span><span class=o>.</span><span class=n>reshape</span><span class=p>(</span><span class=n>rays_rgb</span><span class=p>,</span> <span class=p>[</span><span class=o>-</span><span class=mi>1</span><span class=p>,</span><span class=mi>3</span><span class=p>,</span><span class=mi>3</span><span class=p>])</span>  <span class=c1># [(N-1)*H*W, ro+rd+rgb, 3]</span>
+</span></span><span class=line><span class=cl>        <span class=n>rays_rgb</span> <span class=o>=</span> <span class=n>rays_rgb</span><span class=o>.</span><span class=n>astype</span><span class=p>(</span><span class=n>np</span><span class=o>.</span><span class=n>float32</span><span class=p>)</span>
+</span></span><span class=line><span class=cl>        <span class=nb>print</span><span class=p>(</span><span class=s1>&#39;shuffle rays&#39;</span><span class=p>)</span>
+</span></span><span class=line><span class=cl>        <span class=n>np</span><span class=o>.</span><span class=n>random</span><span class=o>.</span><span class=n>shuffle</span><span class=p>(</span><span class=n>rays_rgb</span><span class=p>)</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>        <span class=nb>print</span><span class=p>(</span><span class=s1>&#39;done&#39;</span><span class=p>)</span>
+</span></span><span class=line><span class=cl>        <span class=n>i_batch</span> <span class=o>=</span> <span class=mi>0</span>
+</span></span></code></pre></td></tr></table></div></div><p>例子中的 lego 小车中 use_batching = False,不过了解这部分函数也会带来收获，我们通过 print()中的内容不难发现主要实现是这个 get_rays_np()函数实现了生成，我们进入到 get_rays_np 函数中：</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre tabindex=0 class=chroma><code><span class=lnt>1
+</span><span class=lnt>2
+</span><span class=lnt>3
+</span><span class=lnt>4
+</span><span class=lnt>5
+</span><span class=lnt>6
+</span><span class=lnt>7
+</span><span class=lnt>8
+</span></code></pre></td><td class=lntd><pre tabindex=0 class=chroma><code class=language-python data-lang=python><span class=line><span class=cl><span class=k>def</span> <span class=nf>get_rays_np</span><span class=p>(</span><span class=n>H</span><span class=p>,</span> <span class=n>W</span><span class=p>,</span> <span class=n>K</span><span class=p>,</span> <span class=n>c2w</span><span class=p>):</span>
+</span></span><span class=line><span class=cl>    <span class=n>i</span><span class=p>,</span> <span class=n>j</span> <span class=o>=</span> <span class=n>np</span><span class=o>.</span><span class=n>meshgrid</span><span class=p>(</span><span class=n>np</span><span class=o>.</span><span class=n>arange</span><span class=p>(</span><span class=n>W</span><span class=p>,</span> <span class=n>dtype</span><span class=o>=</span><span class=n>np</span><span class=o>.</span><span class=n>float32</span><span class=p>),</span> <span class=n>np</span><span class=o>.</span><span class=n>arange</span><span class=p>(</span><span class=n>H</span><span class=p>,</span> <span class=n>dtype</span><span class=o>=</span><span class=n>np</span><span class=o>.</span><span class=n>float32</span><span class=p>),</span> <span class=n>indexing</span><span class=o>=</span><span class=s1>&#39;xy&#39;</span><span class=p>)</span>
+</span></span><span class=line><span class=cl>    <span class=n>dirs</span> <span class=o>=</span> <span class=n>np</span><span class=o>.</span><span class=n>stack</span><span class=p>([(</span><span class=n>i</span><span class=o>-</span><span class=n>K</span><span class=p>[</span><span class=mi>0</span><span class=p>][</span><span class=mi>2</span><span class=p>])</span><span class=o>/</span><span class=n>K</span><span class=p>[</span><span class=mi>0</span><span class=p>][</span><span class=mi>0</span><span class=p>],</span> <span class=o>-</span><span class=p>(</span><span class=n>j</span><span class=o>-</span><span class=n>K</span><span class=p>[</span><span class=mi>1</span><span class=p>][</span><span class=mi>2</span><span class=p>])</span><span class=o>/</span><span class=n>K</span><span class=p>[</span><span class=mi>1</span><span class=p>][</span><span class=mi>1</span><span class=p>],</span> <span class=o>-</span><span class=n>np</span><span class=o>.</span><span class=n>ones_like</span><span class=p>(</span><span class=n>i</span><span class=p>)],</span> <span class=o>-</span><span class=mi>1</span><span class=p>)</span>
+</span></span><span class=line><span class=cl>    <span class=c1># Rotate ray directions from camera frame to the world frame</span>
+</span></span><span class=line><span class=cl>    <span class=n>rays_d</span> <span class=o>=</span> <span class=n>np</span><span class=o>.</span><span class=n>sum</span><span class=p>(</span><span class=n>dirs</span><span class=p>[</span><span class=o>...</span><span class=p>,</span> <span class=n>np</span><span class=o>.</span><span class=n>newaxis</span><span class=p>,</span> <span class=p>:]</span> <span class=o>*</span> <span class=n>c2w</span><span class=p>[:</span><span class=mi>3</span><span class=p>,:</span><span class=mi>3</span><span class=p>],</span> <span class=o>-</span><span class=mi>1</span><span class=p>)</span>  <span class=c1># dot product, equals to: [c2w.dot(dir) for dir in dirs]</span>
+</span></span><span class=line><span class=cl>    <span class=c1># Translate camera frame&#39;s origin to the world frame. It is the origin of all rays.</span>
+</span></span><span class=line><span class=cl>    <span class=n>rays_o</span> <span class=o>=</span> <span class=n>np</span><span class=o>.</span><span class=n>broadcast_to</span><span class=p>(</span><span class=n>c2w</span><span class=p>[:</span><span class=mi>3</span><span class=p>,</span><span class=o>-</span><span class=mi>1</span><span class=p>],</span> <span class=n>np</span><span class=o>.</span><span class=n>shape</span><span class=p>(</span><span class=n>rays_d</span><span class=p>))</span>
+</span></span><span class=line><span class=cl>    <span class=k>return</span> <span class=n>rays_o</span><span class=p>,</span> <span class=n>rays_d</span>
+</span></span></code></pre></td></tr></table></div></div><p>np.meshgrid(a, b，indexing = &ldquo;xy&rdquo;) 函数会返回 b.shape() 行 ，a.shape() 列的二维数组。因此 i, j 都是 [H, W] 的二维数组。i 的每一行代表 x 轴坐标，j 的每一行代表 y 轴坐标。如此一来我们得到了一个图片的每个像素点的坐标。同时我们还能对横坐标和纵坐标进行单独的操作。</p><p>接下来就是使用前文中提到的相机内参来计算每个像素坐标相对于光心的单位方向</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre tabindex=0 class=chroma><code><span class=lnt> 1
+</span><span class=lnt> 2
+</span><span class=lnt> 3
+</span><span class=lnt> 4
+</span><span class=lnt> 5
+</span><span class=lnt> 6
+</span><span class=lnt> 7
+</span><span class=lnt> 8
+</span><span class=lnt> 9
+</span><span class=lnt>10
+</span><span class=lnt>11
+</span><span class=lnt>12
+</span><span class=lnt>13
+</span></code></pre></td><td class=lntd><pre tabindex=0 class=chroma><code class=language-python data-lang=python><span class=line><span class=cl><span class=n>dirs</span> <span class=o>=</span> <span class=n>np</span><span class=o>.</span><span class=n>stack</span><span class=p>([(</span><span class=n>i</span><span class=o>-</span><span class=n>K</span><span class=p>[</span><span class=mi>0</span><span class=p>][</span><span class=mi>2</span><span class=p>])</span><span class=o>/</span><span class=n>K</span><span class=p>[</span><span class=mi>0</span><span class=p>][</span><span class=mi>0</span><span class=p>],</span> <span class=o>-</span><span class=p>(</span><span class=n>j</span><span class=o>-</span><span class=n>K</span><span class=p>[</span><span class=mi>1</span><span class=p>][</span><span class=mi>2</span><span class=p>])</span><span class=o>/</span><span class=n>K</span><span class=p>[</span><span class=mi>1</span><span class=p>][</span><span class=mi>1</span><span class=p>],</span> <span class=o>-</span><span class=n>np</span><span class=o>.</span><span class=n>ones_like</span><span class=p>(</span><span class=n>i</span><span class=p>)],</span> <span class=o>-</span><span class=mi>1</span><span class=p>)</span>
+</span></span><span class=line><span class=cl><span class=s2>&#34;&#34;&#34;
+</span></span></span><span class=line><span class=cl><span class=s2>#K = np.array([
+</span></span></span><span class=line><span class=cl><span class=s2>           #[focal, 0, 0.5*W],
+</span></span></span><span class=line><span class=cl><span class=s2>           #[0, focal, 0.5*H],
+</span></span></span><span class=line><span class=cl><span class=s2>           #[0, 0, 1]
+</span></span></span><span class=line><span class=cl><span class=s2>i是存储x坐标的二维数组，j是存储y坐标的数组
+</span></span></span><span class=line><span class=cl><span class=s2>上面的操作相当于是让每个坐标减去了光心的坐标，然后除以焦距
+</span></span></span><span class=line><span class=cl><span class=s2>那么这样做的实际意义是什么呢
+</span></span></span><span class=line><span class=cl><span class=s2>我们相当于得到了一个方向向量（（i-W/2）/f，-(j-H/2)/f）
+</span></span></span><span class=line><span class=cl><span class=s2>这里的Y是负数，而X不是，这一问题查阅了许久，最终发现：
+</span></span></span><span class=line><span class=cl><span class=s2>原输入的是opencv坐标系下的图像，而我们需要转化为opengl坐标下的图像，此时我们的y，z都需要反转（这里还是不太清楚具体原因，还需要查资料）
+</span></span></span><span class=line><span class=cl><span class=s2>&#34;&#34;&#34;</span>
+</span></span></code></pre></td></tr></table></div></div><h2 id=开始训练>开始训练<a hidden class=anchor aria-hidden=true href=#开始训练>#</a></h2><p>在前面的部分，我们完成了数据的载入、模型的初始化、生成了所有图片的光线原点以及方向，接下来我们就可以开始模型的训练了。</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre tabindex=0 class=chroma><code><span class=lnt> 1
+</span><span class=lnt> 2
+</span><span class=lnt> 3
+</span><span class=lnt> 4
+</span><span class=lnt> 5
+</span><span class=lnt> 6
+</span><span class=lnt> 7
+</span><span class=lnt> 8
+</span><span class=lnt> 9
+</span><span class=lnt>10
+</span></code></pre></td><td class=lntd><pre tabindex=0 class=chroma><code class=language-c data-lang=c><span class=line><span class=cl><span class=n>def</span> <span class=nf>train</span><span class=p>()</span><span class=o>:</span>
+</span></span><span class=line><span class=cl>        <span class=p>...</span>
+</span></span><span class=line><span class=cl>        
+</span></span><span class=line><span class=cl>        <span class=cp># 4、开始训练
+</span></span></span><span class=line><span class=cl><span class=cp></span>        <span class=k>for</span> <span class=n>i</span> <span class=n>in</span> <span class=nf>trange</span><span class=p>(</span><span class=n>start</span><span class=p>,</span> <span class=n>N_iters</span><span class=p>)</span><span class=o>:</span>
+</span></span><span class=line><span class=cl>                
+</span></span><span class=line><span class=cl>                <span class=k>if</span> <span class=nl>use_batching</span><span class=p>:</span>
+</span></span><span class=line><span class=cl>                        <span class=p>...</span>
+</span></span><span class=line><span class=cl>                <span class=k>else</span><span class=o>:</span> 
+</span></span><span class=line><span class=cl>                        <span class=p>...</span>
+</span></span></code></pre></td></tr></table></div></div><h1 id=问题总结>问题总结：<a hidden class=anchor aria-hidden=true href=#问题总结>#</a></h1></div><footer class=post-footer><ul class=post-tags><li><a href=https://net-maker.github.io/netmaker.github.io/tags/nerf/>NeRF</a></li></ul><nav class=paginav><a class=prev href=https://net-maker.github.io/netmaker.github.io/post/first/><span class=title>« Prev</span><br><span>First</span></a>
+<a class=next href=https://net-maker.github.io/netmaker.github.io/post/page/><span class=title>Next »</span><br><span>My 1st post</span></a></nav><div class=share-buttons><a target=_blank rel="noopener noreferrer" aria-label="share NeRF Code on twitter" href="https://twitter.com/intent/tweet/?text=NeRF%20Code&amp;url=https%3a%2f%2fnet-maker.github.io%2fnetmaker.github.io%2fpost%2fnerfcode%2f&amp;hashtags=NeRF"><svg viewBox="0 0 512 512" height="30" width="30" fill="currentcolor"><path d="M449.446.0C483.971.0 512 28.03 512 62.554v386.892C512 483.97 483.97 512 449.446 512H62.554c-34.524.0-62.554-28.03-62.554-62.554V62.554c0-34.524 28.029-62.554 62.554-62.554h386.892zM195.519 424.544c135.939.0 210.268-112.643 210.268-210.268.0-3.218.0-6.437-.153-9.502 14.406-10.421 26.973-23.448 36.935-38.314-13.18 5.824-27.433 9.809-42.452 11.648 15.326-9.196 26.973-23.602 32.49-40.92-14.252 8.429-30.038 14.56-46.896 17.931-13.487-14.406-32.644-23.295-53.946-23.295-40.767.0-73.87 33.104-73.87 73.87.0 5.824.613 11.494 1.992 16.858-61.456-3.065-115.862-32.49-152.337-77.241-6.284 10.881-9.962 23.601-9.962 37.088.0 25.594 13.027 48.276 32.95 61.456-12.107-.307-23.448-3.678-33.41-9.196v.92c0 35.862 25.441 65.594 59.311 72.49-6.13 1.686-12.72 2.606-19.464 2.606-4.751.0-9.348-.46-13.946-1.38 9.349 29.426 36.628 50.728 68.965 51.341-25.287 19.771-57.164 31.571-91.8 31.571-5.977.0-11.801-.306-17.625-1.073 32.337 21.15 71.264 33.41 112.95 33.41z"/></svg></a><a target=_blank rel="noopener noreferrer" aria-label="share NeRF Code on linkedin" href="https://www.linkedin.com/shareArticle?mini=true&amp;url=https%3a%2f%2fnet-maker.github.io%2fnetmaker.github.io%2fpost%2fnerfcode%2f&amp;title=NeRF%20Code&amp;summary=NeRF%20Code&amp;source=https%3a%2f%2fnet-maker.github.io%2fnetmaker.github.io%2fpost%2fnerfcode%2f"><svg viewBox="0 0 512 512" height="30" width="30" fill="currentcolor"><path d="M449.446.0C483.971.0 512 28.03 512 62.554v386.892C512 483.97 483.97 512 449.446 512H62.554c-34.524.0-62.554-28.03-62.554-62.554V62.554c0-34.524 28.029-62.554 62.554-62.554h386.892zM160.461 423.278V197.561h-75.04v225.717h75.04zm270.539.0V293.839c0-69.333-37.018-101.586-86.381-101.586-39.804.0-57.634 21.891-67.617 37.266v-31.958h-75.021c.995 21.181.0 225.717.0 225.717h75.02V297.222c0-6.748.486-13.492 2.474-18.315 5.414-13.475 17.767-27.434 38.494-27.434 27.135.0 38.007 20.707 38.007 51.037v120.768H431zM123.448 88.722C97.774 88.722 81 105.601 81 127.724c0 21.658 16.264 39.002 41.455 39.002h.484c26.165.0 42.452-17.344 42.452-39.002-.485-22.092-16.241-38.954-41.943-39.002z"/></svg></a><a target=_blank rel="noopener noreferrer" aria-label="share NeRF Code on reddit" href="https://reddit.com/submit?url=https%3a%2f%2fnet-maker.github.io%2fnetmaker.github.io%2fpost%2fnerfcode%2f&title=NeRF%20Code"><svg viewBox="0 0 512 512" height="30" width="30" fill="currentcolor"><path d="M449.446.0C483.971.0 512 28.03 512 62.554v386.892C512 483.97 483.97 512 449.446 512H62.554c-34.524.0-62.554-28.03-62.554-62.554V62.554c0-34.524 28.029-62.554 62.554-62.554h386.892zM446 265.638c0-22.964-18.616-41.58-41.58-41.58-11.211.0-21.361 4.457-28.841 11.666-28.424-20.508-67.586-33.757-111.204-35.278l18.941-89.121 61.884 13.157c.756 15.734 13.642 28.29 29.56 28.29 16.407.0 29.706-13.299 29.706-29.701.0-16.403-13.299-29.702-29.706-29.702-11.666.0-21.657 6.792-26.515 16.578l-69.105-14.69c-1.922-.418-3.939-.042-5.585 1.036-1.658 1.073-2.811 2.761-3.224 4.686l-21.152 99.438c-44.258 1.228-84.046 14.494-112.837 35.232-7.468-7.164-17.589-11.591-28.757-11.591-22.965.0-41.585 18.616-41.585 41.58.0 16.896 10.095 31.41 24.568 37.918-.639 4.135-.99 8.328-.99 12.576.0 63.977 74.469 115.836 166.33 115.836s166.334-51.859 166.334-115.836c0-4.218-.347-8.387-.977-12.493 14.564-6.47 24.735-21.034 24.735-38.001zM326.526 373.831c-20.27 20.241-59.115 21.816-70.534 21.816-11.428.0-50.277-1.575-70.522-21.82-3.007-3.008-3.007-7.882.0-10.889 3.003-2.999 7.882-3.003 10.885.0 12.777 12.781 40.11 17.317 59.637 17.317 19.522.0 46.86-4.536 59.657-17.321 3.016-2.999 7.886-2.995 10.885.008 3.008 3.011 3.003 7.882-.008 10.889zm-5.23-48.781c-16.373.0-29.701-13.324-29.701-29.698.0-16.381 13.328-29.714 29.701-29.714 16.378.0 29.706 13.333 29.706 29.714.0 16.374-13.328 29.698-29.706 29.698zM160.91 295.348c0-16.381 13.328-29.71 29.714-29.71 16.369.0 29.689 13.329 29.689 29.71.0 16.373-13.32 29.693-29.689 29.693-16.386.0-29.714-13.32-29.714-29.693z"/></svg></a><a target=_blank rel="noopener noreferrer" aria-label="share NeRF Code on facebook" href="https://facebook.com/sharer/sharer.php?u=https%3a%2f%2fnet-maker.github.io%2fnetmaker.github.io%2fpost%2fnerfcode%2f"><svg viewBox="0 0 512 512" height="30" width="30" fill="currentcolor"><path d="M449.446.0C483.971.0 512 28.03 512 62.554v386.892C512 483.97 483.97 512 449.446 512H342.978V319.085h66.6l12.672-82.621h-79.272v-53.617c0-22.603 11.073-44.636 46.58-44.636H425.6v-70.34s-32.71-5.582-63.982-5.582c-65.288.0-107.96 39.569-107.96 111.204v62.971h-72.573v82.621h72.573V512h-191.104c-34.524.0-62.554-28.03-62.554-62.554V62.554c0-34.524 28.029-62.554 62.554-62.554h386.892z"/></svg></a><a target=_blank rel="noopener noreferrer" aria-label="share NeRF Code on whatsapp" href="https://api.whatsapp.com/send?text=NeRF%20Code%20-%20https%3a%2f%2fnet-maker.github.io%2fnetmaker.github.io%2fpost%2fnerfcode%2f"><svg viewBox="0 0 512 512" height="30" width="30" fill="currentcolor"><path d="M449.446.0C483.971.0 512 28.03 512 62.554v386.892C512 483.97 483.97 512 449.446 512H62.554c-34.524.0-62.554-28.03-62.554-62.554V62.554c0-34.524 28.029-62.554 62.554-62.554h386.892zm-58.673 127.703c-33.842-33.881-78.847-52.548-126.798-52.568-98.799.0-179.21 80.405-179.249 179.234-.013 31.593 8.241 62.428 23.927 89.612l-25.429 92.884 95.021-24.925c26.181 14.28 55.659 21.807 85.658 21.816h.074c98.789.0 179.206-80.413 179.247-179.243.018-47.895-18.61-92.93-52.451-126.81zM263.976 403.485h-.06c-26.734-.01-52.954-7.193-75.828-20.767l-5.441-3.229-56.386 14.792 15.05-54.977-3.542-5.637c-14.913-23.72-22.791-51.136-22.779-79.287.033-82.142 66.867-148.971 149.046-148.971 39.793.014 77.199 15.531 105.329 43.692 28.128 28.16 43.609 65.592 43.594 105.4-.034 82.149-66.866 148.983-148.983 148.984zm81.721-111.581c-4.479-2.242-26.499-13.075-30.604-14.571-4.105-1.495-7.091-2.241-10.077 2.241-2.986 4.483-11.569 14.572-14.182 17.562-2.612 2.988-5.225 3.364-9.703 1.12-4.479-2.241-18.91-6.97-36.017-22.23C231.8 264.15 222.81 249.484 220.198 245s-.279-6.908 1.963-9.14c2.016-2.007 4.48-5.232 6.719-7.847 2.24-2.615 2.986-4.484 4.479-7.472 1.493-2.99.747-5.604-.374-7.846-1.119-2.241-10.077-24.288-13.809-33.256-3.635-8.733-7.327-7.55-10.077-7.688-2.609-.13-5.598-.158-8.583-.158-2.986.0-7.839 1.121-11.944 5.604-4.105 4.484-15.675 15.32-15.675 37.364.0 22.046 16.048 43.342 18.287 46.332 2.24 2.99 31.582 48.227 76.511 67.627 10.685 4.615 19.028 7.371 25.533 9.434 10.728 3.41 20.492 2.929 28.209 1.775 8.605-1.285 26.499-10.833 30.231-21.295 3.732-10.464 3.732-19.431 2.612-21.298-1.119-1.869-4.105-2.99-8.583-5.232z"/></svg></a><a target=_blank rel="noopener noreferrer" aria-label="share NeRF Code on telegram" href="https://telegram.me/share/url?text=NeRF%20Code&amp;url=https%3a%2f%2fnet-maker.github.io%2fnetmaker.github.io%2fpost%2fnerfcode%2f"><svg viewBox="2 2 28 28" height="30" width="30" fill="currentcolor"><path d="M26.49 29.86H5.5a3.37 3.37.0 01-2.47-1 3.35 3.35.0 01-1-2.47V5.48A3.36 3.36.0 013 3 3.37 3.37.0 015.5 2h21A3.38 3.38.0 0129 3a3.36 3.36.0 011 2.46V26.37a3.35 3.35.0 01-1 2.47 3.38 3.38.0 01-2.51 1.02zm-5.38-6.71a.79.79.0 00.85-.66L24.73 9.24a.55.55.0 00-.18-.46.62.62.0 00-.41-.17q-.08.0-16.53 6.11a.59.59.0 00-.41.59.57.57.0 00.43.52l4 1.24 1.61 4.83a.62.62.0 00.63.43.56.56.0 00.4-.17L16.54 20l4.09 3A.9.9.0 0021.11 23.15zM13.8 20.71l-1.21-4q8.72-5.55 8.78-5.55c.15.0.23.0.23.16a.18.18.0 010 .06s-2.51 2.3-7.52 6.8z"/></svg></a><a target=_blank rel="noopener noreferrer" aria-label="share NeRF Code on ycombinator" href="https://news.ycombinator.com/submitlink?t=NeRF%20Code&u=https%3a%2f%2fnet-maker.github.io%2fnetmaker.github.io%2fpost%2fnerfcode%2f"><svg width="30" height="30" viewBox="0 0 512 512" fill="currentcolor" xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"><path d="M449.446.0C483.971.0 512 28.03 512 62.554V449.446C512 483.97 483.97 512 449.446 512H62.554C28.03 512 0 483.97.0 449.446V62.554C0 28.03 28.029.0 62.554.0H449.446zM183.8767 87.9921h-62.034L230.6673 292.4508V424.0079h50.6655V292.4508L390.1575 87.9921H328.1233L256 238.2489z"/></svg></a></div></footer></article></main><footer class=footer><span>&copy; 2023 <a href=https://net-maker.github.io/netmaker.github.io/>CookMaker's Website</a></span>
+<span>Powered by
+<a href=https://gohugo.io/ rel="noopener noreferrer" target=_blank>Hugo</a> &
+        <a href=https://github.com/adityatelange/hugo-PaperMod/ rel=noopener target=_blank>PaperMod</a></span></footer><a href=#top aria-label="go to top" title="Go to Top (Alt + G)" class=top-link id=top-link accesskey=g><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 12 6" fill="currentcolor"><path d="M12 6H0l6-6z"/></svg></a><script>let menu=document.getElementById("menu");menu&&(menu.scrollLeft=localStorage.getItem("menu-scroll-position"),menu.onscroll=function(){localStorage.setItem("menu-scroll-position",menu.scrollLeft)}),document.querySelectorAll('a[href^="#"]').forEach(e=>{e.addEventListener("click",function(e){e.preventDefault();var t=this.getAttribute("href").substr(1);window.matchMedia("(prefers-reduced-motion: reduce)").matches?document.querySelector(`[id='${decodeURIComponent(t)}']`).scrollIntoView():document.querySelector(`[id='${decodeURIComponent(t)}']`).scrollIntoView({behavior:"smooth"}),t==="top"?history.replaceState(null,null," "):history.pushState(null,null,`#${t}`)})})</script><script>var mybutton=document.getElementById("top-link");window.onscroll=function(){document.body.scrollTop>800||document.documentElement.scrollTop>800?(mybutton.style.visibility="visible",mybutton.style.opacity="1"):(mybutton.style.visibility="hidden",mybutton.style.opacity="0")}</script><script>document.getElementById("theme-toggle").addEventListener("click",()=>{document.body.className.includes("dark")?(document.body.classList.remove("dark"),localStorage.setItem("pref-theme","light")):(document.body.classList.add("dark"),localStorage.setItem("pref-theme","dark"))})</script></body></html>

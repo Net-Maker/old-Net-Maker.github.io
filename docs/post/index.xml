@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom" xmlns:content="http://purl.org/rss/1.0/modules/content/">
+  <channel>
+    <title>Posts on CookMaker&#39;s Website</title>
+    <link>https://net-maker.github.io/netmaker.github.io/post/</link>
+    <description>Recent content in Posts on CookMaker&#39;s Website</description>
+    <image>
+      <title>CookMaker&#39;s Website</title>
+      <url>https://net-maker.github.io/netmaker.github.io/%3Clink%20or%20path%20of%20image%20for%20opengraph,%20twitter-cards%3E</url>
+      <link>https://net-maker.github.io/netmaker.github.io/%3Clink%20or%20path%20of%20image%20for%20opengraph,%20twitter-cards%3E</link>
+    </image>
+    <generator>Hugo -- gohugo.io</generator>
+    <language>en</language>
+    <lastBuildDate>Sat, 26 Aug 2023 12:04:21 +0800</lastBuildDate><atom:link href="https://net-maker.github.io/netmaker.github.io/post/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>First</title>
+      <link>https://net-maker.github.io/netmaker.github.io/post/first/</link>
+      <pubDate>Sat, 26 Aug 2023 12:04:21 +0800</pubDate>
+      
+      <guid>https://net-maker.github.io/netmaker.github.io/post/first/</guid>
+      <description>hello hugo!</description>
+    </item>
+    
+    <item>
+      <title>NeRF Code</title>
+      <link>https://net-maker.github.io/netmaker.github.io/post/nerfcode/</link>
+      <pubDate>Tue, 15 Aug 2023 11:30:03 +0000</pubDate>
+      
+      <guid>https://net-maker.github.io/netmaker.github.io/post/nerfcode/</guid>
+      <description>Desc Text.</description>
+    </item>
+    
+    <item>
+      <title>My 1st post</title>
+      <link>https://net-maker.github.io/netmaker.github.io/post/page/</link>
+      <pubDate>Tue, 15 Sep 2020 11:30:03 +0000</pubDate>
+      
+      <guid>https://net-maker.github.io/netmaker.github.io/post/page/</guid>
+      <description>Desc Text.</description>
+    </item>
+    
+  </channel>
+</rss>
