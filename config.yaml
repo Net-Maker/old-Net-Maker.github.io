@@ -1,4 +1,4 @@
-baseURL: "https://net-maker.github.io/netmaker.github.io/"
+baseURL: "https://net-maker.github.io"
 title: CookMaker's Website
 paginate: 5
 theme: papermod
