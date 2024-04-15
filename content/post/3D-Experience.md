@@ -20,7 +20,7 @@ date: 2024-04-15T15:06:23+08:00
 清华源tuna是一个非常好的项目，偶尔会封禁一些下载流量过大的ip，这个时候可以发邮件向他们申请，回复及时且很友善。
 
 
-清华pip源配置命令
+- 清华pip源配置命令
 ```
 参考https://mirrors.tuna.tsinghua.edu.cn/help/pypi/
 ```
@@ -34,7 +34,7 @@ python -m pip install --upgrade pip
 pip config set global.index-url https://pypi.tuna.tsinghua.edu.cn/simple
 ```
 
-清华conda源配置命令
+- 清华conda源配置命令
 ```
 参考https://mirrors.tuna.tsinghua.edu.cn/help/anaconda/
 ```
