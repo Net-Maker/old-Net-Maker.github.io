@@ -10,12 +10,10 @@ I had been doing resarch for NeRF and 3D HumanReconstruction for two years.</p><
 配置环境常见问题 基本网络问题 一定要梯子！一定要梯子！一定要梯子！
 梯子可以解决99%的pip install和conda install遇到的问题 当然，考虑到一些公司环境，这里还是提供一些github镜像和pip镜像（清华源）以及conda镜像（清华源）
 清华源tuna是一个非常好的项目，偶尔会封禁一些下载流量过大的ip，这个时候可以发邮件向他们申请，回复及时且很友善。
-清华pip源配置命令
-参考https://mirrors.tuna.tsinghua.edu.cn/help/pypi/ 临时使用：
+清华pip源配置命令 参考https://mirrors.tuna.tsinghua.edu.cn/help/pypi/ 临时使用：
 pip install -i https://pypi.tuna.tsinghua.edu.cn/simple 你的包 默认使用（pip版本>=10.0.0）
 python -m pip install --upgrade pip
-pip config set global.index-url https://pypi.tuna.tsinghua.edu.cn/simple 清华conda源配置命令
-参考https://mirrors.tuna.tsinghua.edu.cn/help/anaconda/ 修改你的/home/用户名/.condarc文件，替换为
+pip config set global.index-url https://pypi.tuna.tsinghua.edu.cn/simple 清华conda源配置命令 参考https://mirrors.tuna.tsinghua.edu.cn/help/anaconda/ 修改你的/home/用户名/.condarc文件，替换为
 channels:
 - defaults
 show_channel_urls: true
