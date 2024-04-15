@@ -34,6 +34,7 @@ editPost:
     URL: "https://github.com/<path_to_repo>/content"
     Text: "Suggest Changes" # edit text
     appendFilePath: true # to append file path to Edit link
+draft: true
 ---
 
 本次使用的 NeRF 实现是 pytorch 版的 NeRF，它的代码量并不是很大，并且代码文件较少，主要是熟悉一下数据格式和训练流程
