@@ -1,7 +1,7 @@
 baseURL: "https://net-maker.github.io"
 title: CookMaker's Website
 paginate: 5
-theme: papermod
+theme: PaperMod
 
 enableRobotsTXT: true
 buildDrafts: false
@@ -82,11 +82,9 @@ params:
       It's my 4th yaer in my college.  
       My resarch interest is NeRF,Implicit Representation,3D Human Avatar.
       I am interested in developing programs with computer vision techniques too.
-      I had been doing resarch for NeRF and 3D HumanReconstruction for a year.  
-      I also make some money in XianYu(alibaba) by helping others run deeplearning code.
-        
-      I'd like to share all my experience in this website.  
-      Like how to run deeplearning code,how to fix bug,how to use some AI tools.
+      I had been doing resarch for NeRF and 3D HumanReconstruction for two years.  <br>
+      I'm looking for a RA or mphil or phd position.
+      
 
   socialIcons:
     - name: email
