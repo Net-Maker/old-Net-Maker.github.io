@@ -92,6 +92,10 @@ params:
       url: "mailto:1015005313@qq.com"
     - name: github
       url: "https://github.com/Net-Maker"
+    - name: cv
+      url: "https://github.com/Net-Maker/net-maker.github.io/content/post/static/resume.pdf"
+    - name: "x"
+      url: "https://x.com"
 
   analytics:
     google:

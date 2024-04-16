@@ -1,34 +1,26 @@
 <?xml version="1.0" encoding="utf-8" standalone="yes"?>
-<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom" xmlns:content="http://purl.org/rss/1.0/modules/content/">
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
   <channel>
     <title>Posts on CookMaker&#39;s Website</title>
     <link>https://net-maker.github.io/post/</link>
     <description>Recent content in Posts on CookMaker&#39;s Website</description>
-    <image>
-      <title>CookMaker&#39;s Website</title>
-      <url>https://net-maker.github.io/%3Clink%20or%20path%20of%20image%20for%20opengraph,%20twitter-cards%3E</url>
-      <link>https://net-maker.github.io/%3Clink%20or%20path%20of%20image%20for%20opengraph,%20twitter-cards%3E</link>
-    </image>
-    <generator>Hugo -- 0.124.1</generator>
+    <generator>Hugo -- gohugo.io</generator>
     <language>en</language>
-    <lastBuildDate>Mon, 15 Apr 2024 15:06:23 +0800</lastBuildDate>
+    <lastBuildDate>Mon, 15 Apr 2024 23:29:29 +0800</lastBuildDate>
     <atom:link href="https://net-maker.github.io/post/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>Debug记录</title>
+      <link>https://net-maker.github.io/post/debug/</link>
+      <pubDate>Mon, 15 Apr 2024 23:29:29 +0800</pubDate>
+      <guid>https://net-maker.github.io/post/debug/</guid>
+      <description>本文用来记录我遇到的各种奇葩bug，不定时更新 Hugo git config &amp;ndash;global core.autocrlf false, 如果使用Windows和git配置hugo要记得这个，不能修改为CRLF，小心这个warning：LF will be replaced by CRLF the next time Git touches it CUDA 运行3DGS相关代码时出现 CUDA error : illegal memory access 这个问题存在很多争议，这里只讨论3D高斯相关代码中这个问题的情况，我是自己魔改代码时出现的.&#xA;主要问题就是你有数据在cpu上，有数据在gpu上，有的作者喜欢在cpu上渲染（少数），有的喜欢丢到gpu上渲染。&#xA;这个报错最难受的就是无法定位到具体的错误，这个时候可以使用torch.cuda.synchronize()往前一行一行地执行来定位具体错误，也可以直接打印变量的device，然后指定好是用.cpu()还是.cuda().</description>
+    </item>
     <item>
       <title>2年来3D视觉科研总结&amp;科研经验分享</title>
       <link>https://net-maker.github.io/post/3d-experience/</link>
       <pubDate>Mon, 15 Apr 2024 15:06:23 +0800</pubDate>
       <guid>https://net-maker.github.io/post/3d-experience/</guid>
-      <description>Motivation 本文章用来总结本人在3D视觉研究中遇到的问题，同时给出一些经验，主要与Python，NeRF，3DGS相关。
-本人才疏学浅，只希望大家能够在浏览文章后能够互相学习借鉴。
-适用人员：想要入门科研的本科生、未接触过科研的研一、有着科研热情的所有新手！
-写在前面 本文章没有对具体问题的具体解决方法，更多的是自己的一套方法论，希望可以帮助大家获得一定解决问题的通用能力。
-配置环境常见问题 基本网络问题 一定要梯子！一定要梯子！一定要梯子！
-梯子可以解决99%的pip install和conda install遇到的问题 当然，考虑到一些公司环境，这里还是提供一些github镜像和pip镜像（清华源）以及conda镜像（清华源）
-清华源tuna是一个非常好的项目，偶尔会封禁一些下载流量过大的ip，这个时候可以发邮件向他们申请，回复及时且很友善。
-清华pip源配置命令 参考https://mirrors.tuna.tsinghua.edu.cn/help/pypi/ 临时使用：
-pip install -i https://pypi.tuna.tsinghua.edu.cn/simple 你的包 默认使用（pip版本&amp;gt;=10.0.0）
-python -m pip install --upgrade pippip config set global.index-url https://pypi.tuna.tsinghua.edu.cn/simple 清华conda源配置命令 参考https://mirrors.tuna.tsinghua.edu.cn/help/anaconda/ 修改你的/home/用户名/.condarc文件，替换为
-channels:- defaultsshow_channel_urls: truedefault_channels:- https://mirrors.tuna.tsinghua.edu.cn/anaconda/pkgs/main- https://mirrors.tuna.tsinghua.edu.cn/anaconda/pkgs/r- https://mirrors.tuna.tsinghua.edu.cn/anaconda/pkgs/msys2custom_channels:conda-forge: https://mirrors.tuna.tsinghua.edu.cn/anaconda/cloudmsys2: https://mirrors.tuna.tsinghua.edu.cn/anaconda/cloudbioconda: https://mirrors.tuna.tsinghua.edu.cn/anaconda/cloudmenpo: https://mirrors.tuna.tsinghua.edu.cn/anaconda/cloudpytorch: https://mirrors.tuna.tsinghua.edu.cn/anaconda/cloudpytorch-lts: https://mirrors.tuna.tsinghua.edu.cn/anaconda/cloudsimpleitk: https://mirrors.tuna.tsinghua.edu.cn/anaconda/clouddeepmodeling: https://mirrors.tuna.tsinghua.edu.cn/anaconda/cloud/ 如果没有这个文件，则直接创建，无法创建的windows用户可使用conda config --set show_channel_urls yes</description>
+      <description>Motivation 本文章用来总结本人在3D视觉研究中遇到的问题，同时给出一些经验，主要与Python，NeRF，3DGS相关。&#xA;本人才疏学浅，只希望大家能够在浏览文章后能够互相学习借鉴。&#xA;适用人员：想要入门科研的本科生、未接触过科研的研一、有着科研热情的所有新手！&#xA;写在前面 本文章没有对具体问题的具体解决方法，更多的是自己的一套方法论，希望可以帮助大家获得一定解决问题的通用能力。&#xA;配置环境常见问题 基本网络问题 一定要梯子！一定要梯子！一定要梯子！&#xA;梯子可以解决99%的pip install和conda install遇到的问题 当然，考虑到一些公司环境，这里还是提供一些github镜像和pip镜像（清华源）以及conda镜像（清华源）&#xA;清华源tuna是一个非常好的项目，偶尔会封禁一些下载流量过大的ip，这个时候可以发邮件向他们申请，回复及时且很友善。&#xA;清华pip源配置命令 参考https://mirrors.tuna.tsinghua.edu.cn/help/pypi/ 临时使用：&#xA;pip install -i https://pypi.tuna.tsinghua.edu.cn/simple 你的包 默认使用（pip版本&amp;gt;=10.0.0）&#xA;python -m pip install --upgrade pip pip config set global.index-url https://pypi.tuna.tsinghua.edu.cn/simple 清华conda源配置命令 参考https://mirrors.tuna.tsinghua.edu.cn/help/anaconda/ 修改你的/home/用户名/.condarc文件，替换为&#xA;channels: - defaults show_channel_urls: true default_channels: - https://mirrors.tuna.tsinghua.edu.cn/anaconda/pkgs/main - https://mirrors.tuna.tsinghua.edu.cn/anaconda/pkgs/r - https://mirrors.tuna.tsinghua.edu.cn/anaconda/pkgs/msys2 custom_channels: conda-forge: https://mirrors.tuna.tsinghua.edu.cn/anaconda/cloud msys2: https://mirrors.tuna.tsinghua.edu.cn/anaconda/cloud bioconda: https://mirrors.tuna.tsinghua.edu.cn/anaconda/cloud menpo: https://mirrors.tuna.tsinghua.edu.cn/anaconda/cloud pytorch: https://mirrors.tuna.tsinghua.edu.cn/anaconda/cloud pytorch-lts: https://mirrors.tuna.tsinghua.edu.cn/anaconda/cloud simpleitk: https://mirrors.tuna.tsinghua.edu.cn/anaconda/cloud deepmodeling: https://mirrors.tuna.tsinghua.edu.cn/anaconda/cloud/ 如果没有这个文件，则直接创建，无法创建的windows用户可使用conda config --set show_channel_urls yes</description>
     </item>
   </channel>
 </rss>
