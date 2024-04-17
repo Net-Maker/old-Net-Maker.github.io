@@ -93,7 +93,7 @@ params:
     - name: github
       url: "https://github.com/Net-Maker"
     - name: cv
-      url: "https://github.com/Net-Maker/net-maker.github.io/content/post/static/resume.pdf"
+      url: "https://github.com/Net-Maker/Net-Maker.github.io/content/post/static/resume.pdf"
 
   analytics:
     google:
