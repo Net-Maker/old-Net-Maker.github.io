@@ -85,13 +85,15 @@ params:
       I had been doing resarch for NeRF and 3D HumanReconstruction for two years.<br><br>
       
       I'm looking for a RA or mphil or phd position.
-    socialIcons:
-      - name: email
-        url: "mailto:1015005313@qq.com"
-      - name: github
-        url: "https://github.com/Net-Maker"
-      - name: "twitter"
-        url: "https://x.com"
+      
+
+  socialIcons:
+    - name: email
+      url: "mailto:1015005313@qq.com"
+    - name: github
+      url: "https://github.com/Net-Maker"
+    - name: cv
+      url: "https://github.com/Net-Maker/Net-Maker.github.io/content/post/static/resume.pdf"
 
   analytics:
     google:
@@ -107,7 +109,7 @@ params:
     hiddenInSingle: true # hide on single page
 
   editPost:
-    URL: "https://github.com/<path_to_repo>/content"
+    URL: "https://github.com/Net-Maker/net-maker.github.io/content"
     Text: "Suggest Changes" # edit text
     appendFilePath: true # to append file path to Edit link
 
