@@ -3,26 +3,26 @@
   xmlns:xhtml="http://www.w3.org/1999/xhtml">
   <url>
     <loc>https://net-maker.github.io/</loc>
-    <lastmod>2024-04-18T10:52:41+08:00</lastmod>
-  </url><url>
-    <loc>http://localhost:1313/post/debug/</loc>
     <lastmod>2024-04-15T23:29:29+08:00</lastmod>
   </url><url>
-    <loc>http://localhost:1313/post/</loc>
+    <loc>https://net-maker.github.io/post/debug/</loc>
     <lastmod>2024-04-15T23:29:29+08:00</lastmod>
   </url><url>
-    <loc>http://localhost:1313/post/3d-experience/</loc>
+    <loc>https://net-maker.github.io/post/</loc>
+    <lastmod>2024-04-15T23:29:29+08:00</lastmod>
+  </url><url>
+    <loc>https://net-maker.github.io/post/3d-experience/</loc>
     <lastmod>2024-04-15T15:06:23+08:00</lastmod>
   </url><url>
-    <loc>http://localhost:1313/about/</loc>
+    <loc>https://net-maker.github.io/about/</loc>
     <lastmod>2023-08-26T13:23:03+08:00</lastmod>
   </url><url>
-    <loc>http://localhost:1313/archives/</loc>
+    <loc>https://net-maker.github.io/archives/</loc>
   </url><url>
-    <loc>http://localhost:1313/categories/</loc>
+    <loc>https://net-maker.github.io/categories/</loc>
   </url><url>
-    <loc>http://localhost:1313/search/</loc>
+    <loc>https://net-maker.github.io/search/</loc>
   </url><url>
-    <loc>http://localhost:1313/tags/</loc>
+    <loc>https://net-maker.github.io/tags/</loc>
   </url>
 </urlset>
