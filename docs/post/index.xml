@@ -1,22 +1,16 @@
 <?xml version="1.0" encoding="utf-8" standalone="yes"?>
-<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom" xmlns:content="http://purl.org/rss/1.0/modules/content/">
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
   <channel>
     <title>Posts on CookMaker&#39;s Website</title>
     <link>https://net-maker.github.io/post/</link>
     <description>Recent content in Posts on CookMaker&#39;s Website</description>
-    <image>
-      <title>CookMaker&#39;s Website</title>
-      <url>https://net-maker.github.io/%3Clink%20or%20path%20of%20image%20for%20opengraph,%20twitter-cards%3E</url>
-      <link>https://net-maker.github.io/%3Clink%20or%20path%20of%20image%20for%20opengraph,%20twitter-cards%3E</link>
-    </image>
-    <generator>Hugo -- 0.124.1</generator>
-    <language>en</language>
-    <lastBuildDate>Thu, 06 Jun 2024 23:52:26 +0800</lastBuildDate>
-    <atom:link href="https://net-maker.github.io/post/index.xml" rel="self" type="application/rss+xml" />
+    <generator>Hugo -- gohugo.io</generator>
+    <lastBuildDate>Thu, 06 Jun 2024 23:52:26 +0800</lastBuildDate><atom:link href="https://net-maker.github.io/post/index.xml" rel="self" type="application/rss+xml" />
     <item>
       <title>论文相关经历分享</title>
       <link>https://net-maker.github.io/post/paper_thinking/</link>
       <pubDate>Thu, 06 Jun 2024 23:52:26 +0800</pubDate>
+      
       <guid>https://net-maker.github.io/post/paper_thinking/</guid>
       <description>前言 通过一个月以来高强度的熬夜，终于是与xinyang一起将GGavatar所有内容完成了。GGavatar是我和他在公司相遇后一起从零构建的一个作品，我们主要参考gaussianavatars、flashavatar、slpattingavatar这三篇文章，进一步增加了基于高斯的avatar的性能，这篇文章的创作总共经历了三个月，与我第一篇匆匆完成的水文形成了鲜明的对比，我想这大概才是一篇文章该有的工作量吧。经历的越多，越觉得自己渺小，所以写下这篇文章，时刻提醒自己保持认真严谨的态度对待科研。
 第一篇水文：HC-NeRF 在代码中挣扎 23年暑假，我在家中冥思苦想，却始终解决不了当时想针对instant-NGP做的改进&amp;ndash;将采样从四边形模式变成正三角形模式（这个idea在23年底被arxiv上的优秀同学开发了）。戴老师也多次想要针对这一问题给予我一定的帮助，但是奈何CUDA实现的哈希表以及整个nerf流程，对当时的我来说实在是难以看懂并解决，且问题出在另一个几千行代码的文件中。
@@ -30,21 +24,25 @@ GGAvatar-新的磨练 在这之前，我对数字人已经非常熟悉了，在�
 代码上，已然是轻车熟路了，我能够为xinyang提供一些改进思路，并且确实是work的，虽然一些调参工作比较繁杂，但是代码上的工作只进行了一个月左右，就取得了很大的进步。我们开始写文章、选baseline做实验，与之前的流程类似。
 但是，此次做实验与HC-NeRF不同，HC-NeRF跑baseline很方便，公共数据集也比较多，但Avatar类工作没有太多公共数据集，需要大量的时间来复现baseline、修改代码以实现一些公共task、在这上面花的精力比文章主体模型还要多，同时还要进行大量的可视化对比，图表绘制，大量数据的对齐，在这么多繁杂的任务中，我的粗心更是时不时就将事情搞砸，比如渲染视频的帧乱了，或是FLAME的tracker出bug了，每一步都没有很好地去排查，导致错了才发现要从头再来，且当时没有很好地去反思，频频犯错。
 许多叙述上的词汇不到位、某个baseline渲染出来的角度没对齐，这些细节部分的问题，我总是忽略，导致作品最后显得粗糙，还好xinyang非常注重细节，帮我一起排查审核，不过确实实打实的影响了进度，这些错误其实可以不用犯，要么是原理问题没有钻研清楚，要么是单纯粗心大意，没有进一步检查，这里写下一些复盘后的感想，望与读者共勉：
-在完成多个阶段的任务时，要确保每一阶段都达到要求，不然牵一发而动全身，会浪费很多时间，特别是baseline的复现 对待baseline，不能轻视，我认为要将它的代码也看作研究中的一部分，好好研究，才不容易出错 制作对比图表时，很容易发现问题，发现后要顺藤摸瓜地去排查，而不是自圆其说，敷衍了事 在研究HC-NeRF时体会到的：不要只关注一个实验样本的结果，应该关注整体结果，并从指标中发现问题，这也是发现idea的好机会 最后，用心对待正在参与的每一个科研项目，切不可懒散 结语 本文章文字枯燥、叙述繁琐，读者能看到这里是我莫大荣幸。求学路上定有与我经历相似的朋友，若能在我这篇文章中获得些许经验，那本文也是有了意义，很多道理都是经历过后才能知行合一的，但是若能提前悟出，少走弯路，那是最好。</description>
+ 在完成多个阶段的任务时，要确保每一阶段都达到要求，不然牵一发而动全身，会浪费很多时间，特别是baseline的复现 对待baseline，不能轻视，我认为要将它的代码也看作研究中的一部分，好好研究，才不容易出错 制作对比图表时，很容易发现问题，发现后要顺藤摸瓜地去排查，而不是自圆其说，敷衍了事 在研究HC-NeRF时体会到的：不要只关注一个实验样本的结果，应该关注整体结果，并从指标中发现问题，这也是发现idea的好机会 最后，用心对待正在参与的每一个科研项目，切不可懒散  结语 本文章文字枯燥、叙述繁琐，读者能看到这里是我莫大荣幸。求学路上定有与我经历相似的朋友，若能在我这篇文章中获得些许经验，那本文也是有了意义，很多道理都是经历过后才能知行合一的，但是若能提前悟出，少走弯路，那是最好。</description>
     </item>
+    
     <item>
       <title>Debug记录</title>
       <link>https://net-maker.github.io/post/debug/</link>
       <pubDate>Mon, 15 Apr 2024 23:29:29 +0800</pubDate>
+      
       <guid>https://net-maker.github.io/post/debug/</guid>
-      <description>本文用来记录我遇到的各种奇葩bug，不定时更新 Hugo git config &amp;ndash;global core.autocrlf false, 如果使用Windows和git配置hugo要记得这个，不能修改为CRLF，小心这个warning：LF will be replaced by CRLF the next time Git touches it CUDA 运行3DGS相关代码时出现 CUDA error : illegal memory access 这个问题存在很多争议，这里只讨论3D高斯相关代码中这个问题的情况，我是自己魔改代码时出现的.
+      <description>本文用来记录我遇到的各种奇葩bug，不定时更新 Hugo  git config &amp;ndash;global core.autocrlf false, 如果使用Windows和git配置hugo要记得这个，不能修改为CRLF，小心这个warning：LF will be replaced by CRLF the next time Git touches it  CUDA   运行3DGS相关代码时出现 CUDA error : illegal memory access   这个问题存在很多争议，这里只讨论3D高斯相关代码中这个问题的情况，我是自己魔改代码时出现的.
 主要问题就是你有数据在cpu上，有数据在gpu上，有的作者喜欢在cpu上渲染（少数），有的喜欢丢到gpu上渲染。
 这个报错最难受的就是无法定位到具体的错误，这个时候可以使用torch.cuda.synchronize()往前一行一行地执行来定位具体错误，也可以直接打印变量的device，然后指定好是用.cpu()还是.cuda().</description>
     </item>
+    
     <item>
       <title>2年来3D视觉科研总结&amp;科研经验分享</title>
       <link>https://net-maker.github.io/post/3d-experience/</link>
       <pubDate>Mon, 15 Apr 2024 15:06:23 +0800</pubDate>
+      
       <guid>https://net-maker.github.io/post/3d-experience/</guid>
       <description>Motivation 本文章用来总结本人在3D视觉研究中遇到的问题，同时给出一些经验，主要与Python，NeRF，3DGS相关。
 本人才疏学浅，只希望大家能够在浏览文章后能够互相学习借鉴。
@@ -53,10 +51,11 @@ GGAvatar-新的磨练 在这之前，我对数字人已经非常熟悉了，在�
 配置环境常见问题 基本网络问题 一定要梯子！一定要梯子！一定要梯子！
 梯子可以解决99%的pip install和conda install遇到的问题 当然，考虑到一些公司环境，这里还是提供一些github镜像和pip镜像（清华源）以及conda镜像（清华源）
 清华源tuna是一个非常好的项目，偶尔会封禁一些下载流量过大的ip，这个时候可以发邮件向他们申请，回复及时且很友善。
-清华pip源配置命令 参考https://mirrors.tuna.tsinghua.edu.cn/help/pypi/ 临时使用：
+ 清华pip源配置命令  参考https://mirrors.tuna.tsinghua.edu.cn/help/pypi/ 临时使用：
 pip install -i https://pypi.tuna.tsinghua.edu.cn/simple 你的包 默认使用（pip版本&amp;gt;=10.0.0）
-python -m pip install --upgrade pip pip config set global.index-url https://pypi.tuna.tsinghua.edu.cn/simple 清华conda源配置命令 参考https://mirrors.tuna.tsinghua.edu.cn/help/anaconda/ 修改你的/home/用户名/.condarc文件，替换为
+python -m pip install --upgrade pip pip config set global.index-url https://pypi.tuna.tsinghua.edu.cn/simple  清华conda源配置命令  参考https://mirrors.tuna.tsinghua.edu.cn/help/anaconda/ 修改你的/home/用户名/.condarc文件，替换为
 channels: - defaults show_channel_urls: true default_channels: - https://mirrors.tuna.tsinghua.edu.cn/anaconda/pkgs/main - https://mirrors.tuna.tsinghua.edu.cn/anaconda/pkgs/r - https://mirrors.tuna.tsinghua.edu.cn/anaconda/pkgs/msys2 custom_channels: conda-forge: https://mirrors.tuna.tsinghua.edu.cn/anaconda/cloud msys2: https://mirrors.tuna.tsinghua.edu.cn/anaconda/cloud bioconda: https://mirrors.tuna.tsinghua.edu.cn/anaconda/cloud menpo: https://mirrors.tuna.tsinghua.edu.cn/anaconda/cloud pytorch: https://mirrors.tuna.tsinghua.edu.cn/anaconda/cloud pytorch-lts: https://mirrors.tuna.tsinghua.edu.cn/anaconda/cloud simpleitk: https://mirrors.tuna.tsinghua.edu.cn/anaconda/cloud deepmodeling: https://mirrors.tuna.tsinghua.edu.cn/anaconda/cloud/ 如果没有这个文件，则直接创建，无法创建的windows用户可使用conda config --set show_channel_urls yes</description>
     </item>
+    
   </channel>
 </rss>
