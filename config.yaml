@@ -79,7 +79,7 @@ params:
     Content: |
       Welcome to my blog.  
       My name is JiaXin Wang, I just get my bachelor degree in Hangzhou Dianzi University.<br>
-      I'm now a visiting student in Westlake University, supervised by xiuyuliang<a herf="endless.do">endless.do</a>.  
+      I'm now a visiting student in Westlake University, supervised by xiuyuliang[<a herf="endless.do">endless.do</a>].  
       My resarch interest is NeRF,Implicit Representation,3D Human Avatar.
       I am interested in developing programs with computer vision techniques too.
       I had been doing resarch for NeRF and 3D HumanReconstruction for two years.<br><br>
