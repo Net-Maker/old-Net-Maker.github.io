@@ -1,1 +1,3 @@
 User-agent: *
+Disallow:
+Sitemap: https://net-maker.github.io/sitemap.xml
