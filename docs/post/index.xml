@@ -11,8 +11,17 @@
     </image>
     <generator>Hugo -- 0.128.1</generator>
     <language>en</language>
-    <lastBuildDate>Thu, 06 Jun 2024 23:52:26 +0800</lastBuildDate>
+    <lastBuildDate>Tue, 09 Jul 2024 13:26:31 +0800</lastBuildDate>
     <atom:link href="https://net-maker.github.io/post/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>CUDA_switcher</title>
+      <link>https://net-maker.github.io/post/cuda_switcher/</link>
+      <pubDate>Tue, 09 Jul 2024 13:26:31 +0800</pubDate>
+      <guid>https://net-maker.github.io/post/cuda_switcher/</guid>
+      <description>最近写了一个bash脚本，可以方便地切换CUDA版本的同时不会把你的PATH变得很大，在多个不同cuda版本编译的conda环境中切换非常方便，分享一下：
+创建cuda_switcher.sh:
+# ~/cuda-switcher/switch_cuda.sh #!/bin/bash if [ -z &amp;#34;$1&amp;#34; ]; then echo &amp;#34;Usage: source switch_cuda.sh &amp;lt;version&amp;gt;&amp;#34; echo &amp;#34;Example: source switch_cuda.sh 11.2&amp;#34; return 1 fi CUDA_VERSION=$1 CUDA_PATH=&amp;#34;/usr/local/cuda-$CUDA_VERSION&amp;#34; if [ ! -d &amp;#34;$CUDA_PATH&amp;#34; ]; then echo &amp;#34;CUDA version $CUDA_VERSION not found at $CUDA_PATH&amp;#34; return 1 fi # Remove any existing CUDA paths from PATH and LD_LIBRARY_PATH export PATH=$(echo $PATH | sed -e &amp;#39;s|/usr/local/cuda-[^/]*||g&amp;#39; -e &amp;#39;s|::|:|g&amp;#39; -e &amp;#39;s|^:||&amp;#39; -e &amp;#39;s|:$||&amp;#39;) export LD_LIBRARY_PATH=$(echo $LD_LIBRARY_PATH | sed -e &amp;#39;s|/usr/local/cuda-[^/]*||g&amp;#39; -e &amp;#39;s|::|:|g&amp;#39; -e &amp;#39;s|^:||&amp;#39; -e &amp;#39;s|:$||&amp;#39;) # Add the new CUDA paths export CUDA_HOME=$CUDA_PATH export PATH=$CUDA_HOME/bin:$PATH export LD_LIBRARY_PATH=$CUDA_HOME/lib64:$LD_LIBRARY_PATH echo &amp;#34;Switched to CUDA $CUDA_VERSION&amp;#34; 使用：</description>
+    </item>
     <item>
       <title>论文相关经历分享</title>
       <link>https://net-maker.github.io/post/paper_thinking/</link>
@@ -39,7 +48,9 @@ GGAvatar-新的磨练 在这之前，我对数字人已经非常熟悉了，在�
       <guid>https://net-maker.github.io/post/debug/</guid>
       <description>本文用来记录我遇到的各种奇葩bug，不定时更新 Hugo git config &amp;ndash;global core.autocrlf false, 如果使用Windows和git配置hugo要记得这个，不能修改为CRLF，小心这个warning：LF will be replaced by CRLF the next time Git touches it CUDA 运行3DGS相关代码时出现 CUDA error : illegal memory access 这个问题存在很多争议，这里只讨论3D高斯相关代码中这个问题的情况，我是自己魔改代码时出现的.
 主要问题就是你有数据在cpu上，有数据在gpu上，有的作者喜欢在cpu上渲染（少数），有的喜欢丢到gpu上渲染。
-这个报错最难受的就是无法定位到具体的错误，这个时候可以使用torch.cuda.synchronize()往前一行一行地执行来定位具体错误，也可以直接打印变量的device，然后指定好是用.cpu()还是.cuda().</description>
+这个报错最难受的就是无法定位到具体的错误，这个时候可以使用torch.cuda.synchronize()往前一行一行地执行来定位具体错误，也可以直接打印变量的device，然后指定好是用.cpu()还是.cuda().
+新增：这个报错还可能发生在你的光栅化没有正确与你的torch版本和cuda版本对应上的时候，此时：
+使用nvcc -V检查你的cuda版本 使用pip list | grep torch检查你的torch版本是否对应好了cuda版本 删除submodule/diff-gaussian-rasterization/build，然后在/submodule/diff-gaussian-rasterization这个目录下运行 python setup.py install。 以上步骤基本可以解决问题，注意此方法适用于在跑gaussian相关baseline的时候，初次配环境出的错，如果是你后期改代码导致报错了，还是关注你自己写的代码有没有问题吧，或者检查你系统的CUDA版本是不是改变了。</description>
     </item>
     <item>
       <title>2年来3D视觉科研总结&amp;科研经验分享</title>
